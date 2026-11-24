@@ -14,7 +14,8 @@
                 "actionDate": "2025-01-02",
                 "transactionDate": "2025-01-02",
                 "amount": 12.34,
-                "runningBalance": 100.25
+                "runningBalance": 100.25,
+                "uuid": "synthetic-transaction-1"
             }
         ]
     },

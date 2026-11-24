@@ -1,0 +1,14 @@
+title = "Investec MCP secret scan"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-api-key"
+
+  [[rules.allowlists]]
+  description = "Literal placeholder token in the supplied Private Bank OpenAPI success example"
+  condition = "AND"
+  regexTarget = "secret"
+  regexes = ['''^qwertyuiop123456789$''']
+  paths = ['''(^|/)docs/sa-pb-account-information\.yaml$''']

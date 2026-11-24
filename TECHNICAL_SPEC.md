@@ -1,26 +1,26 @@
 # Investec MCP — Version 1 Technical Specification
 
-**Status:** Proposed / implementation-ready planning baseline  
+**Status:** Implemented V1 baseline; local release acceptance passed
 **Date:** 2026-11-24  
-**Target:** Single-user, local `stdio` MCP server for Claude Desktop and GitHub Copilot in VS Code  
+**Target:** Single-user, local `stdio` MCP server for Codex with native and Docker protocol checks
 **Technology:** .NET 11, C#, official `ModelContextProtocol` C# SDK, `HttpClient`, xUnit or equivalent test stack  
 **Source reference:** https://github.com/Nicolaas0411/investec-mcp  
-**Important:** This is a new .NET implementation based on the behavior of the Python upstream project, not a change to the upstream repo. API shapes and permission details must be contract-tested with Investec's current documentation/sandbox before production banking data is used.
+**Important:** This is a new .NET implementation based on the behavior of the Python upstream project, not a change to the upstream repo. API shapes and permission details must be contract-tested with Investec's current documentation/sandbox before production banking data is used. The local `docs/sa-pb-account-information.yaml` is the OpenAPI contract reference for the three V1 read endpoints.
 
 ## 1. Problem and intended outcome
 
-The upstream Python project provides Investec API access through MCP, but the intended maintainer uses C# and TypeScript. V1 reimplements the *read-only* subset as a manageable single .NET project. The resulting application can be launched as a child process by Claude Desktop or VS Code/Copilot and can retrieve authorized Investec account lists, balances, and transaction history without any exposed mechanism to transfer funds.
+The upstream Python project provides Investec API access through MCP, but the intended maintainer uses C# and TypeScript. V1 reimplements the *read-only* subset as a manageable single .NET project. Codex launches the server over `stdio` to retrieve authorized Investec account lists, balances, and transaction history without any exposed mechanism to transfer funds. Claude Desktop and VS Code/Copilot setup remains documented for a later acceptance phase.
 
 ### Success criteria
-1. Claude Desktop and VS Code/Copilot both enumerate exactly the approved tools and invoke them via `stdio`.
-2. Read-only Investec credentials are used. The configured key is scoped to selected accounts, account metadata, balances, and transactions only.
+1. Codex can register the server and discover exactly the approved tools over `stdio`; native and Docker protocol tests invoke all three tools against synthetic responses.
+2. The published Investec mock sandbox supports the three read calls. Production access, when enabled, requires a key restricted to selected accounts and read scopes.
 3. A payment/transfer cannot be triggered by any MCP tool or reachable Investec HTTP client method, including a malicious tool argument or prompt injection in a transaction description.
-4. Account/balance/transaction responses are typed, bounded, sanitized, and accurate against controlled fixtures and an authorized live smoke test.
+4. Account/balance/transaction responses are typed, bounded, sanitized, and verified against controlled fixtures and a read-only mock sandbox smoke test.
 5. A non-root Docker container can be launched interactively with `-i` to serve MCP over standard input/output.
-6. Unit, protocol, and security tests run in CI without live credentials.
+6. Unit, protocol, and security tests pass locally without live credentials. The CI workflow is ready for a future hosted repository.
 
 ### Non-goals
-No payments/transfers, beneficiaries, profiles, documents, databases, persistent transaction caching, autonomous analytics, scheduling, public hosting, OAuth login for MCP clients, marketplace publication, multi-tenancy, or ChatGPT remote connector in V1. Do not add generic HTTP request or arbitrary URL tools. Financial aggregation can be added later as deterministic services.
+No payments/transfers, beneficiaries, profiles, documents, databases, persistent transaction caching, autonomous analytics, scheduling, public hosting, OAuth login for MCP clients, marketplace publication, multi-tenancy, or ChatGPT remote connector in V1. Claude Desktop/Copilot acceptance, production-key comparison, and hosted GitHub CI are post-V1 validation work. Do not add generic HTTP request or arbitrary URL tools. Financial aggregation can be added later as deterministic services.
 
 ## 2. Source review and migration decisions
 
@@ -43,7 +43,7 @@ The upstream project documents 16 tools. The three V1 P0 tools map to its `get_a
 ## 3. Architecture
 
 ```
-Claude Desktop / VS Code Copilot
+Codex
        │ stdin/stdout (MCP JSON-RPC framing)
        ▼
 InvestecMcp (.NET 11 Generic Host)
@@ -209,7 +209,11 @@ Validate options at startup. For MCP `stdio`, avoid console logs to stdout. No `
 ### Native build
 `dotnet restore`, `dotnet build -c Release`, `dotnet test -c Release`, `dotnet publish -c Release -o ./publish`. With pinned official SDK, configure `Host.CreateApplicationBuilder`, `AddMcpServer().WithStdioServerTransport().WithTools...` per current SDK API. Verify tool metadata and clean stdout.
 
-### Claude Desktop sample (`claude_desktop_config.json`)
+### Codex V1 setup
+
+Use the Docker registration in [Codex setup](docs/codex.md). V1 acceptance records actual Codex tool discovery and read calls against the read-only mock sandbox, plus native and Docker protocol calls against the synthetic backend.
+
+### Post-V1 Claude Desktop sample (`claude_desktop_config.json`)
 ```json
 {
   "mcpServers": {
@@ -222,7 +226,7 @@ Validate options at startup. For MCP `stdio`, avoid console logs to stdout. No `
 ```
 Ensure environment variables are supplied securely to the launched process; do not put literal secrets in shared examples. On Windows, config is typically `%APPDATA%\\Claude\\claude_desktop_config.json`; on macOS, `~/Library/Application Support/Claude/claude_desktop_config.json`. Verify local desktop app build/settings.
 
-### VS Code/Copilot user `mcp-config.json` sample
+### Post-V1 VS Code/Copilot user `mcp-config.json` sample
 ```json
 {
   "mcpServers": {
@@ -257,32 +261,37 @@ Start compiled executable with a real MCP client library or protocol harness; ca
 ### Security/adversarial
 Send crafted path/account IDs, far-future/unbounded date ranges, script-like and model-instruction transaction descriptions, sentinel `CLIENT_SECRET` in upstream exception bodies, 401/403/429/500, massive payload, attempted payment tool invocation. Assert no banking write requests and no leak in output/logs.
 
-### Real API manual smoke tests (explicit opt-in)
+### Production API manual smoke tests (post-V1, explicit opt-in)
 With a newly created *read-only* personal API key and only consented accounts: validate live accounts, balances, and bounded transactions against Investec app/export; redact screenshots, do not record raw data in CI. Sandbox first when possible. No automated live CI.
 
-### CI
+### CI workflow
 On PR and main: restore with locked dependencies, format check, build, unit + protocol tests, security static scan and secret scan, Docker build + synthetic smoke test. No secrets needed. Set branch protection / required green checks after repo exists.
+
+For V1 without a hosted repository, run the equivalent local checks and inspect the workflow. A hosted green run becomes an acceptance gate when a repository is created.
 
 ## 11. Definition of Done for V1
 
-- [ ] .NET 11 app starts correctly under Claude Desktop and VS Code/Copilot.
-- [ ] Exactly three read-only MCP tools discovered and functioning.
-- [ ] Live account access limited to selected Investec accounts; unknown IDs rejected pre-HTTP.
-- [ ] Payment/transfer paths unavailable in tools, service interface, route allowlist, and Investec key scopes.
-- [ ] Credential/token lifecycle, timeouts, limits and errors are tested.
-- [ ] No sensitive stdout logging; secret sanitization verified.
-- [ ] Native and Docker E2E tests pass with synthetic fixtures.
-- [ ] `README`, local setup, security caveats, Docker launch and troubleshooting documented.
-- [ ] Manual live smoke test recorded as pass/fail only (no raw financial data).
+- [x] .NET 11 app starts correctly under Codex through Docker; native and Docker MCP protocol checks pass.
+- [x] Exactly three read-only MCP tools discovered and functioning.
+- [x] Mock sandbox access and synthetic fixtures confirm local selected-account restrictions; unknown IDs rejected pre-HTTP.
+- [x] Payment/transfer paths unavailable in tools, service interface, and route allowlist; production key scopes require post-V1 validation.
+- [x] Credential/token lifecycle, timeouts, limits and errors are tested.
+- [x] No sensitive stdout logging; secret sanitization verified.
+- [x] Native and Docker E2E tests pass with synthetic fixtures.
+- [x] `README`, local setup, security caveats, Docker launch and troubleshooting documented.
+- [x] Read-only mock sandbox smoke test recorded as pass/fail only (no raw financial data).
+- [x] Local build, test, format, dependency, secret-scan, and Docker checks pass; hosted CI is required once a GitHub repository exists.
+
+Claude Desktop/Copilot manual acceptance and production-key validation are post-V1 checks. Production access requires fresh confirmation of key scopes, account restrictions, date and paging behavior, and sanitized pass/fail evidence.
 
 ## 12. Decision records
 
 **ADR-001 C# instead of Python:** Developer maintainability and extension speed outweigh small initial port cost. Python upstream serves as reference, not production dependency.  
 **ADR-002 Single app:** One .NET executable minimizes deployment complexity. Tests separate as needed.  
-**ADR-003 Local stdio:** Compatible with requested AI clients without remote attack surface or OAuth server burden.  
+**ADR-003 Local stdio:** Compatible with Codex without remote attack surface or OAuth server burden.
 **ADR-004 Read-only by construction:** Three independent controls: Investec key permissions, gateway GET/route allowlist, MCP tool discovery.  
 **ADR-005 No database:** Avoid data duplication and retention risk in personal connector V1.  
-**ADR-006 Docker optional runtime:** Native execution remains primary for desktop client compatibility; Docker must be equally secure and testable.
+**ADR-006 Docker optional runtime:** Native execution remains primary for Codex; Docker must be equally secure and testable.
 
 ## 13. Delivery sequence and risks
 
@@ -291,8 +300,9 @@ On PR and main: restore with locked dependencies, format check, build, unit + pr
 3. Implement secure token acquisition + read-only client.
 4. Implement typed account and transaction tools and validation.
 5. Establish security/adversarial tests and CI.
-6. Validate Claude/Copilot native use.
-7. Package/test Docker stdio; complete live smoke test.
+6. Validate Codex native use and synthetic protocol calls.
+7. Package/test Docker stdio; complete read-only mock sandbox smoke test.
+8. After V1, validate Claude/Copilot and a restricted production key when those environments exist.
 
 **Estimated engineering effort:** 28–45 hours for a maintainable .NET implementation and tests; +4–8 hours for Docker/integration troubleshooting, contingent on API availability. Estimates are planning ranges, not guarantees.
 
@@ -301,7 +311,7 @@ On PR and main: restore with locked dependencies, format check, build, unit + pr
 - Actual response envelope and pagination semantics; transaction history depth and rate limits.
 - Whether pending-transactions endpoint is available for the personal banking API product.
 - Current official MCP C# SDK stable package APIs/annotations (pin at implementation time).
-- Claude Desktop and VS Code versions/enabled MCP features on the target machine.
+- Claude Desktop and VS Code versions/enabled MCP features on a future target machine (post-V1).
 
 ## 14. Source references
 

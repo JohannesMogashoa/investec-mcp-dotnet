@@ -2,8 +2,10 @@
 
 **Target repository:** New user-controlled repository (not specified; do not write issues to upstream).  
 **Baseline:** `TECHNICAL_SPEC.md` (2026-11-24).  
-**Process:** Create six milestone labels (M0–M5), epics as tracking issues, and the issue-ready tasks below. All tasks link to the technical specification.  
+**Process:** Create six V1 milestone labels (M0–M5) and a Post-V1 milestone, epics as tracking issues, and the issue-ready tasks below. All tasks link to the technical specification.
 **Estimation:** S ≤ 2h, M 2–4h, L 4–8h, XL >8h (split XL if discovered).
+
+**V1 scope decision (2026-11-24):** Codex acceptance, native and Docker synthetic protocol checks, read-only mock sandbox smoke, and local quality checks form the release gate. Claude Desktop, VS Code/Copilot, production-key comparison, and a hosted GitHub CI run are deferred until the required clients, key, or repository exist. Existing ticket IDs remain stable for history.
 
 ## Milestones / critical path
 
@@ -13,10 +15,11 @@
 | M1 — Read-only Investec foundation | Credential and banking gateway | 05–09 | No write paths, fake account GET works |
 | M2 — MCP read tools | Reliable client-facing contracts | 10–14 | Three tools, bounds and auth enforced |
 | M3 — Security and testing | Robust protocol and adversarial coverage | 15–19 | Automated tests and clean logs |
-| M4 — Desktop and Docker | Deploy/install locally | 20–23 | Both AI clients plus Docker pass |
-| M5 — Release | Final validation, documentation | 24–26 | V1 definition of done achieved |
+| M4 — Codex and Docker | Deploy/install locally | 22–23, 27 | Codex plus native and Docker protocol checks pass |
+| M5 — Release | Final validation, documentation | 24–26 | Revised V1 definition of done achieved |
+| Post-V1 — Additional clients | Client acceptance when installed | 20–21 | Claude Desktop and Copilot pass separately |
 
-**Dependency chain:** 01 → 02 → 05 → 06 → 07 → 10 → 11/12 → 13 → 17 → 20/21 → 24 → 26. Other tasks are parallelizable as indicated.
+**Dependency chain:** 01 → 02 → 05 → 06 → 07 → 10 → 11/12 → 13 → 17 → 22/23 and 27 → 24 → 26. Other tasks are parallelizable as indicated. #20–21 are post-V1 and do not block #26.
 
 ## Label taxonomy
 
@@ -40,7 +43,7 @@
 - [x] Production app uses Generic Host, DI and official `ModelContextProtocol` SDK for `stdio`.
 - [x] No listener is opened on an HTTP port.
 - [x] stdout reserved exclusively for MCP protocol messages.
-- [ ] No secrets in example config or history.
+- [x] No secrets in example config or history, as checked by the pinned scanner locally.
 
 ### #02 — Register MCP stdio server and deterministic tool discovery test
 **Labels:** `type:feature`, `area:hosting`, `priority:P0`, `size:M`  
@@ -294,8 +297,8 @@
 - [x] Dependency and secret scanning policy documented.
 
 ### #20 — Claude Desktop local installation and manual acceptance
-**Labels:** `type:docs`, `area:hosting`, `priority:P0`, `size:M`  
-**Milestone:** M4  
+**Labels:** `type:docs`, `area:hosting`, `priority:P2`, `size:M`
+**Milestone:** Post-V1
 **Depends on:** 17
 
 **Description:** Document native publish, Claude MCP config (`mcpServers`), secure secret provision, restart, logs and troubleshooting. Test with synthetic backend first.
@@ -306,13 +309,13 @@
 - [x] A malformed config has documented recovery steps.
 - [x] No secrets embedded in shared example.
 
-**Remaining work:** Complete the documented setup and manual acceptance using the synthetic backend, then sandbox if available.
+**Remaining work:** Deferred until Claude Desktop is installed. Complete the documented setup and manual acceptance using the synthetic backend, then sandbox if available.
 
 Sandbox onboarding is documented in [Local configuration](docs/configuration.md). Verify the Claude Desktop launch with sandbox credentials during acceptance.
 
 ### #21 — VS Code / Copilot local installation and acceptance
-**Labels:** `type:docs`, `area:hosting`, `priority:P0`, `size:M`  
-**Milestone:** M4  
+**Labels:** `type:docs`, `area:hosting`, `priority:P2`, `size:M`
+**Milestone:** Post-V1
 **Depends on:** 17
 
 **Description:** Document user-profile MCP server config (`servers`), setup, tool permission review and troubleshooting on Windows and macOS/Linux.
@@ -323,7 +326,7 @@ Sandbox onboarding is documented in [Local configuration](docs/configuration.md)
 - [x] Restart and output diagnostics documented.
 - [ ] No real credentials in issue attachments.
 
-**Remaining work:** Complete the documented setup and manual acceptance using the synthetic backend, then sandbox if available.
+**Remaining work:** Deferred until a Copilot-enabled client is installed. Complete the documented setup and manual acceptance using the synthetic backend, then sandbox if available.
 
 Sandbox onboarding is documented in [Local configuration](docs/configuration.md). Verify the VS Code/Copilot launch with sandbox credentials during acceptance.
 
@@ -346,7 +349,7 @@ Sandbox onboarding is documented in [Local configuration](docs/configuration.md)
 **Milestone:** M4  
 **Depends on:** 22
 
-**Description:** Protocol tests over Docker stdio with fake backend, example Claude and VS Code launch JSON, no host port mapping.
+**Description:** Protocol tests over Docker stdio with fake backend and Codex launch guidance; retain Claude and VS Code launch examples for post-V1 use. No host port mapping.
 
 **Acceptance criteria:**
 - [x] Container responds to initialize/list/call.
@@ -356,58 +359,74 @@ Sandbox onboarding is documented in [Local configuration](docs/configuration.md)
 
 **Verification:** `protocol-test` target passes initialize, discovery, and tool calls against a synthetic gateway with network disabled and restricted runtime flags. The default production image remains separate.
 
-### #24 — Sandbox/live read-only manual verification
+### #24 — Read-only mock sandbox verification
 **Labels:** `type:test`, `area:investec-api`, `priority:P0`, `size:M`  
 **Milestone:** M5  
-**Depends on:** 20,21,23,03
+**Depends on:** 03,17,23,27
 
-**Description:** Verify sandbox mock-data account, balance, and transaction calls first. Then confirm a newly provisioned read-only production key works with authorized personal accounts and compare selected balances and short transaction periods to authoritative Investec view.
+**Description:** Verify mock sandbox account, balance, and transaction calls with read scopes only. Production key and authoritative-view comparison are post-V1 validation, contingent on a restricted key.
 
 **Acceptance criteria:**
-- [ ] Only selected account IDs accessible.
-- [ ] Account and balance response shape verified.
-- [ ] Small date range transactions validated, including date meaning and pagination.
-- [ ] No real data persisted to repo, issues, or CI.
-- [ ] Record only non-sensitive pass/fail and divergences.
+- [x] Mock sandbox account, balance, and short-range transaction calls succeed.
+- [x] Sandbox response shapes match the V1 read models.
+- [x] No sandbox credentials or returned data persisted to repo, issues, or CI.
+- [x] Record only non-sensitive pass/fail and known contract divergences.
+- [x] Confirm configured account restrictions in the Codex acceptance run.
 
-**Remaining work:** Run the read-only sandbox verification using the documented sandbox mode. For production validation, use a restricted personal key and record only sanitized results.
+**Remaining work:** Sandbox date limits and paging beyond the short smoke range remain unverified. Bank-side account restriction and production validation are post-V1; use a restricted personal key and record only sanitized results.
 
 ### #25 — V1 documentation, troubleshooting, threat model
 **Labels:** `type:docs`, `area:docs`, `priority:P0`, `size:M`  
 **Milestone:** M5  
-**Depends on:** 20,21,22
+**Depends on:** 22,27
 
 **Description:** Consolidate README, local setup, Docker instructions, security/privacy posture, commands and maintenance guidance for .NET developer.
 
 **Acceptance criteria:**
 - [x] One-command restore/test/publish instructions.
-- [x] Claude/VS Code native and Docker configuration examples.
+- [x] Codex native and Docker configuration examples; future Claude/VS Code examples retained.
 - [x] Clear disclosure that models may send financial data to hosted AI providers.
 - [x] Supported environments, permission management and secret rotation documented.
 - [x] Upgrade path to remote HTTP kept as future ADR, not implemented.
 
-**Remaining work:** Reconcile observed Claude Desktop and Copilot behavior after manual acceptance. Current setup and security guides are documented but desktop behavior remains unverified.
+**Remaining work:** Claude Desktop and Copilot behavior remains post-V1 and unverified.
 
 Document the sandbox as the recommended exploration mode, including its mock-data and stateless behavior and the connector's read-only tools.
 
 ### #26 — V1 release gate and tagged build
 **Labels:** `type:chore`, `area:hosting`, `priority:P0`, `size:M`  
 **Milestone:** M5  
-**Depends on:** 13,17,19,20,21,23,24,25
+**Depends on:** 13,17,19,23,24,25,27
 
 **Description:** Run and document V1 DoD, review security exceptions, tag `v0.1.0` when criteria are met, publish no secrets.
 
 **Acceptance criteria:**
-- [ ] All P0 issues complete or documented release blocker.
-- [ ] CI green, synthetic end-to-end and Docker tests green.
-- [ ] Claude Desktop and Copilot acceptance passed.
-- [ ] No payment permissions or tools.
-- [ ] Manual live smoke report contains no private banking data.
-- [ ] Release notes and known limitations published.
+- [x] All V1 P0 behavior complete; unresolved API contract and hosted CI items documented as limitations or post-V1 gates.
+- [x] Local quality checks, synthetic end-to-end and Docker tests green; CI workflow inspected locally.
+- [x] Codex registration, discovery, and read-tool acceptance passed.
+- [x] No payment permissions or tools in the connector; production key permission validation is post-V1.
+- [x] Read-only mock sandbox smoke report contains no private banking data.
+- [x] Release notes and known limitations published.
 
-**Remaining work:** Review and record every V1 release criterion. Create the `v0.1.0` tag only after the gate passes.
+**Result:** The local V1 gate passed on 2026-11-24; see [release status](docs/release-status.md) and [release notes](docs/release-notes-v0.1.0.md). Hosted CI requires a GitHub repository and remains post-V1.
+
+### #27 — Codex and protocol acceptance
+**Labels:** `type:test`, `area:hosting`, `priority:P0`, `size:M`
+**Milestone:** M4
+**Depends on:** 17,23
+
+**Description:** Register the Docker-backed server in Codex and verify exact tool discovery and all three read calls against the read-only mock sandbox. Verify native and Docker stdio separately with controlled synthetic responses. Record only sanitized pass/fail evidence.
+
+**Acceptance criteria:**
+- [x] Codex discovers exactly `get_accounts`, `get_account_balance`, and `get_account_transactions`.
+- [x] Codex invokes all three read tools against the mock sandbox without stdout protocol contamination.
+- [x] Native and Docker stdio protocol tests work with controlled synthetic responses; Docker-backed Codex works with the documented private environment setup.
+- [x] Account restrictions and safe failure behavior are observed without recording returned banking data.
 
 ## Optional post-V1 issues (do not put in V1 release milestone)
+- Claude Desktop and VS Code/Copilot acceptance (#20–21).
+- Restricted production-key and authoritative-view comparison; date and paging contract validation beyond the mock sandbox smoke.
+- Hosted GitHub CI and branch protection after a destination repository exists.
 - Pending transaction endpoint, once verified.
 - Deterministic `get_spending_summary` / categorization and transfer exclusion rules.
 - Secure local persistence and retention lifecycle.
@@ -418,8 +437,8 @@ Document the sandbox as the recommended exploration mode, including its mock-dat
 
 **Issue templates** (after repository is created): feature, security, defect. **Suggested Project fields:** Status, Priority, Milestone, Size, Target Release. **Views:** Board grouped by Status; Table grouped by Milestone; Blocked issues filter. **Branch naming:** `feat/NN-short-description`, `security/NN-short-description`, `test/NN-short-description`. **PR checks:** CI pass, linked issue, tests for changed behavior, security checklist for banking/API changes.
 
-**Suggested epics (optional):** EPIC-A Secure banking foundation (#03–09), EPIC-B MCP tools (#10–14), EPIC-C Verification and CI (#15–19), EPIC-D Desktop delivery and container (#20–26). Issue numbers above are *planning identifiers*, not actual GitHub issue numbers. Actual numbers are assigned when created.
+**Suggested epics (optional):** EPIC-A Secure banking foundation (#03–09), EPIC-B MCP tools (#10–14), EPIC-C Verification and CI (#15–19), EPIC-D Codex delivery and container (#22–27), EPIC-E Additional clients (#20–21). Issue numbers above are *planning identifiers*, not actual GitHub issue numbers. Actual numbers are assigned when created.
 
 ## GitHub CLI import guidance
 
-When a user-owned destination repository is selected, create labels/milestones and issues there. No issues have been created yet. To avoid guessing issue numbers or assuming dependency identifiers, import in order, then rewrite dependency links using the assigned GitHub issue numbers. An optional machine-readable backlog JSON is included separately for scripting.
+When a user-owned destination repository is selected, create labels/milestones and issues there. No issues have been created yet. To avoid guessing issue numbers or assuming dependency identifiers, import in order, then rewrite dependency links using the assigned GitHub issue numbers. `ISSUES.json` has not been generated in this checkout; this Markdown backlog is the current import source.

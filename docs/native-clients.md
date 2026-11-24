@@ -50,6 +50,44 @@ Open the MCP Servers panel in the intended Copilot session and confirm that the 
 
 ## Acceptance and recovery
 
-Start with synthetic protocol tests, then use the Investec sandbox with a restricted sandbox key. In each desktop client, confirm exactly `get_accounts`, `get_account_balance`, and `get_account_transactions` appear, invoke all three against one authorized mock account and a short date range, and confirm unknown account IDs and write-tool names fail. Record pass/fail only; do not save responses or screenshots with banking data.
+### Synthetic desktop acceptance
+
+The test project contains a separate MCP executable with a synthetic banking gateway. Publish it on the same operating system where the desktop client will launch it, to a private directory outside the repository. Replace the example output path with an absolute path appropriate for that host:
+
+```sh
+dotnet publish tests/InvestecMcp.Tests/InvestecMcp.Tests.csproj -c Release -o /ABSOLUTE/PRIVATE/PATH/investec-mcp-synthetic
+```
+
+For Claude Desktop, temporarily use this private server entry:
+
+```json
+{
+  "mcpServers": {
+    "investecSynthetic": {
+      "command": "dotnet",
+      "args": ["/ABSOLUTE/PRIVATE/PATH/investec-mcp-synthetic/InvestecMcp.Tests.dll", "--banking-test"]
+    }
+  }
+}
+```
+
+For the Copilot user `mcp-config.json`, use:
+
+```json
+{
+  "mcpServers": {
+    "investecSynthetic": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": ["/ABSOLUTE/PRIVATE/PATH/investec-mcp-synthetic/InvestecMcp.Tests.dll", "--banking-test"],
+      "tools": ["get_accounts", "get_account_balance", "get_account_transactions"]
+    }
+  }
+}
+```
+
+This test executable needs no Investec credentials and returns only invented account and transaction data. It is for acceptance testing only; do not deploy it as the production connector. Fully restart the client, then confirm exactly the three read tools appear. Call `get_accounts` and use its `synthetic-account` ID for `get_account_balance`. Call `get_account_transactions` for that ID with both dates set to today's `YYYY-MM-DD` date. Confirm all three succeed, while an unknown account ID and a write-tool name such as `transfer_money` fail. Remove the temporary `investecSynthetic` entry after acceptance.
+
+Then use the production server with restricted Investec sandbox credentials. In each desktop client, repeat discovery and all three read calls against one authorized sandbox account and a short date range. Record pass/fail only; do not save responses or screenshots with banking data. Production account acceptance requires a separately restricted production key.
 
 If the server is missing, first validate the JSON syntax, executable path, .NET runtime availability, and process environment. Restart the desktop client completely. Check its MCP server status and stderr logs for a configuration setting name or sanitized error code. If a malformed edit prevents loading, restore the previous valid JSON entry and restart. For VS Code remote sessions or Dev Containers, the command, DLL, and credentials must exist where the Copilot harness runs. See [Docker setup](docker.md) for an alternative launch path.

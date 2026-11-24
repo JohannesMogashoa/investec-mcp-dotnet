@@ -8,7 +8,8 @@ public static class InvestecResponseParser
     {
         var response = Parse<AccountListData>(json);
         if (response.Data?.Accounts is null ||
-            response.Data.Accounts.Any(account => account is null || string.IsNullOrWhiteSpace(account.AccountId)))
+            response.Data.Accounts.Any(account => account is null || string.IsNullOrWhiteSpace(account.AccountId)) ||
+            response.Meta?.TotalPages != 1)
         {
             throw new JsonException("Invalid account response.");
         }

@@ -1,6 +1,6 @@
 # Investec Private Banking API contract
 
-Issue #3 research, reviewed 2026-11-24. This covers South African Private Banking Direct API access for individuals and private businesses. The primary local reference is [Private Bank OpenAPI 1.0.1](sa-pb-account-information.yaml). Its schemas and examples are documentation, not observed API behavior; no sandbox or production credentials were available.
+Issue #3 research, reviewed 2026-11-24. This covers South African Private Banking Direct API access for individuals and private businesses. The primary local reference is [Private Bank OpenAPI 1.0.1](sa-pb-account-information.yaml). Its schemas and examples are documentation. A read-only MCP smoke test using the document's published mock sandbox environment passed for account discovery, one balance, and a short transaction window; no production credentials were used or response payloads recorded.
 
 ## Token and credentials
 
@@ -32,7 +32,7 @@ Exact OAuth and Private Banking error response schemas, status distinctions for 
 
 ## Sandbox and open issues
 
-Investec offers a mock-data sandbox at `https://openapisandbox.investec.com`. Its portal points users to the sandbox credential guide. Sandbox calls can help verify HTTP behavior. Production key-level restrictions require separate confirmation with a personal connection restricted to approved accounts and read permissions. [Investec sandbox guide](https://developer.investec.com/individuals)
+Investec offers a mock-data sandbox at `https://openapisandbox.investec.com`. Its portal points users to the sandbox credential guide, and the local OpenAPI file includes published mock credentials. The opt-in `SandboxSmokeTests` test passed MCP initialize, discovery, account listing, balance, and transaction calls using only the three read scopes and endpoints. It did not validate transaction date boundaries, paging, or bank-side account restrictions. Production key-level restrictions require separate confirmation with a personal connection restricted to approved accounts and read permissions. [Investec sandbox guide](https://developer.investec.com/individuals)
 
 | Existing backlog issue | Difference from Python upstream or verification still needed |
 | --- | --- |

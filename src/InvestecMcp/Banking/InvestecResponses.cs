@@ -126,4 +126,7 @@ public sealed class InvestecTransaction
 
     [JsonPropertyName("runningBalance")]
     public decimal? RunningBalance { get; init; }
+
+    [JsonPropertyName("uuid")]
+    public string? Uuid { get; init; }
 }

@@ -90,7 +90,7 @@ public sealed class InvestecFailureTests
             bankingCalls++;
             return Task.FromResult(bankingCalls == 1
                 ? new HttpResponseMessage(HttpStatusCode.Unauthorized)
-                : Json("""{"data":{"accounts":[]}}"""));
+                : Json("""{"data":{"accounts":[]},"meta":{"totalPages":1}}"""));
         });
         var options = Options();
         var gateway = new InvestecGateway(client,

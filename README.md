@@ -16,7 +16,7 @@ INVESTEC_SCOPES=accounts balances transactions
 
 Keep credentials in a private environment or OS secret store. Do not put them in this repository or directly in shared MCP configuration. Sandbox data is mock data and stateless. Calls can be repeated, and balances do not change after sandbox transfers. The connector remains read-only and does not expose transfer, payment, or document tools.
 
-See [sandbox and production configuration](docs/configuration.md), [native desktop setup](docs/native-clients.md), [Docker stdio setup](docs/docker.md), and [security and operations](docs/security.md). Banking tool results may be sent by your MCP client to a hosted AI provider; review its data handling before connecting real accounts.
+See [Codex setup](docs/codex.md), [sandbox and production configuration](docs/configuration.md), [Docker stdio setup](docs/docker.md), and [security and operations](docs/security.md). Claude Desktop and Copilot setup is documented for a later phase in [native desktop setup](docs/native-clients.md). Banking tool results may be sent by your MCP client to a hosted AI provider; review its data handling before connecting real accounts.
 
 ## Build and run
 

@@ -41,6 +41,7 @@ public sealed class InvestecResponseParserTests
         Assert.Equal(DateOnly.Parse("2025-01-02"), transaction.TransactionDate);
         Assert.Equal(12.34m, transaction.Amount);
         Assert.Equal("DEBIT", transaction.Type);
+        Assert.Equal("synthetic-transaction-1", transaction.Uuid);
         Assert.Equal(1, response.Meta!.TotalPages);
     }
 
@@ -48,8 +49,20 @@ public sealed class InvestecResponseParserTests
     [InlineData("{}")]
     [InlineData("{\"data\":{\"accounts\":[{}]}}")]
     [InlineData("{\"data\":{\"accounts\":[]},\"meta\":{\"totalPages\":0}}")]
+    [InlineData("{\"data\":{\"accounts\":[]}}")]
+    [InlineData("{\"data\":{\"accounts\":[]},\"meta\":{}}")]
     public void Accounts_RejectMissingEssentialFields(string json)
     {
+        Assert.Throws<JsonException>(() => InvestecResponseParser.ParseAccounts(Encoding.UTF8.GetBytes(json)));
+    }
+
+    [Fact]
+    public void Accounts_RejectAdditionalPagesWhenNoPagingContractExists()
+    {
+        var json = """
+            {"data":{"accounts":[{"accountId":"synthetic-account"}]},"meta":{"totalPages":2}}
+            """;
+
         Assert.Throws<JsonException>(() => InvestecResponseParser.ParseAccounts(Encoding.UTF8.GetBytes(json)));
     }
 

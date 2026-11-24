@@ -16,7 +16,16 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - name: Scan Git history for secrets
-        run: docker run --rm -v "$PWD:/repo:ro" ghcr.io/gitleaks/gitleaks:v8.30.1 git --redact --no-banner /repo
+        run: docker run --rm -v "$PWD:/repo:ro" ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f git --redact --no-banner --config /repo/.gitleaks.toml /repo
+      - name: Verify secret detection with synthetic canary
+        shell: bash
+        run: |
+          set +e
+          scan_output="$(printf 'access_token = "%s%s"\n' 'CANARY_J9qW4eR7tY2uI5oP8' 'aS3dF6gH1jK4lZ7xC0vB9nM2' | docker run --rm -i -v "$PWD:/repo:ro" ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f stdin --redact --no-banner --config /repo/.gitleaks.toml --verbose 2>&1)"
+          scan_status=$?
+          set -e
+          test "$scan_status" -eq 1
+          [[ "$scan_output" == *"RuleID:"*"generic-api-key"* ]]
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
@@ -25,6 +34,12 @@ jobs:
       - run: dotnet build -c Release --no-restore
       - run: dotnet test -c Release --no-build
       - run: docker build -t investec-mcp:ci .
+      - name: Check production image isolation
+        run: |
+          image_user="$(docker image inspect investec-mcp:ci --format '{{.Config.User}}')"
+          test -n "$image_user"
+          test "$image_user" != "0"
+          test "$(docker image inspect investec-mcp:ci --format '{{json .Config.ExposedPorts}}')" = "null"
       - run: docker build --target protocol-test -t investec-mcp:protocol-test .
       - run: dotnet test -c Release --no-build --filter FullyQualifiedName~DockerProtocolTests
         env:
