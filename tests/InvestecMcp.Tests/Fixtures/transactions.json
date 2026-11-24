@@ -1,0 +1,27 @@
+{
+    "data": {
+        "transactions": [
+            {
+                "accountId": "9900000000000000000000001",
+                "type": "DEBIT",
+                "transactionType": "CardPurchases",
+                "status": "POSTED",
+                "description": "SYNTHETIC MERCHANT",
+                "cardNumber": "000000xxxxxx0001",
+                "postedOrder": 1,
+                "postingDate": "2025-01-03",
+                "valueDate": "2025-01-03",
+                "actionDate": "2025-01-02",
+                "transactionDate": "2025-01-02",
+                "amount": 12.34,
+                "runningBalance": 100.25
+            }
+        ]
+    },
+    "links": {
+        "self": "https://openapi.investec.com/za/pb/v1/accounts/9900000000000000000000001/transactions"
+    },
+    "meta": {
+        "totalPages": 1
+    }
+}

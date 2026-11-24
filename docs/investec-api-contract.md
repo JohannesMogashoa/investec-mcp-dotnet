@@ -1,0 +1,43 @@
+# Investec Private Banking API contract
+
+Issue #3 research, reviewed 2026-11-24. This covers South African Private Banking Direct API access for individuals and private businesses. The schemas below describe fields observed in published examples. Field requiredness and nullability still need confirmation where an example alone cannot establish them. Verification used public documentation only.
+
+## Token and credentials
+
+Production token endpoint is `POST https://openapi.investec.com/identity/v2/oauth2/token`. Send HTTP Basic authentication with the client ID and secret, the `x-api-key` header, and an `application/x-www-form-urlencoded` body with `grant_type=client_credentials`. The documented success response is a top-level object with `access_token` (string), `token_type` (string, example `Bearer`), `expires_in` (integer seconds), and `scope` (string). The example lifetime is about 30 minutes. Use the returned lifetime and obtain a new token with the same grant when needed. [Investec OAuth reference](https://developer.investec.com/api-reference/SA%20Open%20API%20-%20Authorization) · [Investec token request and response example](https://www.postman.com/investec-open-api/programmable-banking/documentation/hl5nm0u/investec-programmable-card-api?entity=request-26868804-134c35c6-8af1-481e-93f1-d708a22f275c)
+
+In Investec Online, the main account holder can create a key under **Manage → Bank integrations → Direct API → Connection** and select the accounts and permissions separately. For V1 the key must grant only the approved accounts and the permissions needed to list accounts and read balances and transaction history. The published token example returns `accounts`; it does not establish whether that scope alone grants all three reads, whether `balances` and `transactions` are independently requestable today, or how the current personal connection labels map to those scopes. Keep production scope defaults pending that confirmation. Request only verified read scopes and reject broader grants. [Investec individual access setup](https://developer.investec.com/individuals) · [Investec token example](https://www.postman.com/investec-open-api/programmable-banking/documentation/hl5nm0u/investec-programmable-card-api?entity=request-26868804-134c35c6-8af1-481e-93f1-d708a22f275c)
+
+## Read endpoints and response fields
+
+Production base URL is `https://openapi.investec.com/za/pb/v1`. Send `Authorization: Bearer <token>` and `Accept: application/json` on all three GETs. No request body is needed. Published success envelopes include `data`, `links.self` (string), and `meta.totalPages` (integer). [Investec Private Bank API](https://developer.investec.com/api-reference/SA%20PB%20Account%20Information) · [Investec Private Bank Postman collection](https://www.postman.com/investec-open-api/programmable-banking/collection/gly7cw5/investec-programmable-banking-pb)
+
+| Request | Observed success payload inside `data` |
+| --- | --- |
+| `GET /accounts` | `accounts` array. Items have string `accountId`, `accountNumber`, `referenceName`, `productName`, and `profileId`, boolean `kycCompliant`, and string `accountName` when present. The example omits `accountName` on one item and omits currency from account discovery. [Accounts example](https://www.postman.com/investec-open-api/programmable-banking/request/wnb2z4r/get-accounts) |
+| `GET /accounts/{accountId}/balance` | Object with string `accountId` and `currency`, and numeric `currentBalance` and `availableBalance`. Read monetary JSON numbers as decimals. [Balance example](https://www.postman.com/investec-open-api/programmable-banking/request/9iqrn4d/account-balance) |
+| `GET /accounts/{accountId}/transactions?fromDate=YYYY-MM-DD&toDate=YYYY-MM-DD` | `transactions` array. Items include strings `accountId`, `type`, `transactionType`, `status`, `description`, and `cardNumber`; integer `postedOrder`; date strings `postingDate`, `valueDate`, `actionDate`, and `transactionDate`; and numeric `amount` and `runningBalance`. The example includes a positive amount on a debit. Preserve amount and direction separately in upstream DTOs. [Private Banking transaction example](https://investec.gitbook.io/programmable-banking-community-wiki/get-started/api-quick-start-guide/how-to-get-your-transaction-history) |
+
+Use the exact `accountId` from account discovery as an opaque string. The documented values can exceed integer precision and differ from `accountNumber` and `profileId`. Validate membership in the local authorized set before escaping it as a single path segment. Avoid exposing full account numbers, card references, or profile IDs in MCP output. [Accounts example](https://www.postman.com/investec-open-api/programmable-banking/request/wnb2z4r/get-accounts) · [Balance path parameter](https://www.postman.com/investec-open-api/programmable-banking/request/9iqrn4d/account-balance)
+
+## Transaction dates, pagination, and errors
+
+Investec's quickstart uses ISO calendar dates, shows a same-date query, and describes filtering by posting date. Posting date is when the transaction affects the account balance. Transaction date is when the underlying activity occurred. The docs reviewed leave the maximum lookback, maximum span, omitted-date defaults, boundary inclusivity, timezone, and future-date handling open. The technical spec's default 90-day maximum is a local bound on the requested window. [Investec transaction quickstart](https://investec.gitbook.io/programmable-banking-community-wiki/get-started/api-quick-start-guide/how-to-get-your-transaction-history) · [Investec date FAQ](https://developer.investec.com/individuals#faqs)
+
+The quickstart mentions pagination and the example contains `meta.totalPages: 1`. Confirm the Private Banking parameter names, page numbering, size limits, ordering, and continuation contract before implementing automatic paging. Route every request through the fixed gateway, including subsequent pages. Confirm the accepted transaction filter values and `includePending` behavior separately. The collection documents a dedicated pending-transactions endpoint. [Transaction quickstart](https://investec.gitbook.io/programmable-banking-community-wiki/get-started/api-quick-start-guide/how-to-get-your-transaction-history) · [Account Information collection](https://www.postman.com/investec-open-api/programmable-banking/folder/dg87bd1/account-information)
+
+Exact OAuth and Private Banking error response schemas, status distinctions for missing versus unauthorized accounts, and throttling headers remain unverified. For #09 and #15, use HTTP status as the primary classification input, tolerate non-JSON error bodies, and keep raw upstream errors out of MCP responses. Add vendor-specific error parsing only after capturing a de-identified contract. [Investec OAuth reference](https://developer.investec.com/api-reference/SA%20Open%20API%20-%20Authorization) · [Investec Private Bank reference](https://developer.investec.com/api-reference/SA%20PB%20Account%20Information)
+
+## Sandbox and open issues
+
+Investec offers a mock-data sandbox at `https://openapisandbox.investec.com`. Its portal points users to the sandbox credential guide. Sandbox calls can help verify HTTP behavior. Production key-level restrictions require separate confirmation with a personal connection restricted to approved accounts and read permissions. [Investec sandbox guide](https://developer.investec.com/individuals)
+
+| Existing backlog issue | Difference from Python upstream or verification still needed |
+| --- | --- |
+| #04, #05, #24 | The Python client requests a scope bundle that includes payments, transfers, and documents. Confirm the minimal explicit read-scope request, returned grant, personal connection permission labels, and behavior for a key restricted to selected accounts. Use only the three approved read calls during the optional live check. |
+| #08, #09, #15 | Confirm optional and nullable fields, exact error envelopes, and throttle headers. The published success examples support DTO work while these checks are pending. |
+| #12, #14, #24 | The Python tooling exposes transaction filters and pending transactions. Verify accepted filter names and values, date defaults and retention, and the paging contract before adopting any of those upstream behaviors. |
+
+[Python upstream](https://github.com/Nicolaas0411/investec-mcp) · [Technical spec upstream review](../TECHNICAL_SPEC.md) · [GitHub implementation backlog](../GITHUB_BACKLOG.md)
+
+The JSON files in [Fixtures](../tests/InvestecMcp.Tests/Fixtures/) use invented values. The OAuth fixture represents the published token shape and is unsuitable as evidence that its example scope covers all three reads.

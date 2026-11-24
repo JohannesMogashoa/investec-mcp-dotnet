@@ -62,6 +62,8 @@
 
 **Description:** Verify account, balance, transaction, token endpoint request and response schema, permissions, pagination, filtering, transaction date rules, errors, sandbox availability. Capture **synthetic** fixtures only.
 
+**Research:** [Investec Private Banking API contract](docs/investec-api-contract.md)
+
 **Acceptance criteria:**
 - [ ] Document source URLs and verified endpoint schemas.
 - [ ] Confirm exact permitted scopes and key-level privileges for personal read-only access.

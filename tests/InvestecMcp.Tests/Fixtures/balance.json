@@ -1,0 +1,14 @@
+{
+    "data": {
+        "accountId": "9900000000000000000000001",
+        "currentBalance": 100.25,
+        "availableBalance": 90.25,
+        "currency": "ZAR"
+    },
+    "links": {
+        "self": "https://openapi.investec.com/za/pb/v1/accounts/9900000000000000000000001/balance"
+    },
+    "meta": {
+        "totalPages": 1
+    }
+}

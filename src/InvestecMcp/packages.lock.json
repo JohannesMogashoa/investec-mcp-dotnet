@@ -26,6 +26,16 @@
           "Microsoft.Extensions.Logging.EventSource": "10.0.14"
         }
       },
+      "Microsoft.Extensions.Http": {
+        "type": "Direct",
+        "requested": "[10.0.14, )",
+        "resolved": "10.0.14",
+        "contentHash": "IDsXLGGz7nJMsqspWnErsP18WyAVf6V9Ixl4p47/8/95Jak3ZA1YWhQ0iesMVwubVhkVZGoO9m9ADUnK0m6HLw==",
+        "dependencies": {
+          "Microsoft.Extensions.Diagnostics": "10.0.14",
+          "Microsoft.Extensions.Logging": "10.0.14"
+        }
+      },
       "ModelContextProtocol": {
         "type": "Direct",
         "requested": "[2.4.0, )",

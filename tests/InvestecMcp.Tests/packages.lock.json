@@ -145,6 +145,15 @@
           "Microsoft.Extensions.Logging.EventSource": "10.0.14"
         }
       },
+      "Microsoft.Extensions.Http": {
+        "type": "Transitive",
+        "resolved": "10.0.14",
+        "contentHash": "IDsXLGGz7nJMsqspWnErsP18WyAVf6V9Ixl4p47/8/95Jak3ZA1YWhQ0iesMVwubVhkVZGoO9m9ADUnK0m6HLw==",
+        "dependencies": {
+          "Microsoft.Extensions.Diagnostics": "10.0.14",
+          "Microsoft.Extensions.Logging": "10.0.14"
+        }
+      },
       "Microsoft.Extensions.Logging": {
         "type": "Transitive",
         "resolved": "10.0.14",
@@ -290,6 +299,7 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.Hosting": "[10.0.14, )",
+          "Microsoft.Extensions.Http": "[10.0.14, )",
           "ModelContextProtocol": "[2.4.0, )"
         }
       }

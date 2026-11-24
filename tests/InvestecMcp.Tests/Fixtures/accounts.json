@@ -1,0 +1,29 @@
+{
+    "data": {
+        "accounts": [
+            {
+                "accountId": "9900000000000000000000001",
+                "accountNumber": "00000000001",
+                "accountName": "Synthetic account holder",
+                "referenceName": "Synthetic everyday account",
+                "productName": "Private Bank Account",
+                "kycCompliant": true,
+                "profileId": "synthetic-profile"
+            },
+            {
+                "accountId": "9900000000000000000000002",
+                "accountNumber": "00000000002",
+                "referenceName": "Synthetic savings account",
+                "productName": "Savings Account",
+                "kycCompliant": true,
+                "profileId": "synthetic-profile"
+            }
+        ]
+    },
+    "links": {
+        "self": "https://openapi.investec.com/za/pb/v1/accounts"
+    },
+    "meta": {
+        "totalPages": 1
+    }
+}
