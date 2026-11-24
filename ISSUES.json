@@ -1,0 +1,340 @@
+[
+  {
+    "planning_id": "01",
+    "title": "Bootstrap .NET 11 solution and baseline repository",
+    "labels": [
+      "type:chore",
+      "area:hosting",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M0",
+    "depends_on": "None",
+    "body": "**Labels:** `type:chore`, `area:hosting`, `priority:P0`, `size:M`  \n**Milestone:** M0  \n**Depends on:** None\n\n**Description:** Create a new repository with one production `.NET 11` executable project and one test project. Add `.slnx`, pinned SDK `global.json`, `.editorconfig`, gitignore, dependency lock policy, and base README. No Python in runtime. \n\n**Acceptance criteria:**\n- [ ] `dotnet restore`, `dotnet build -c Release`, `dotnet test` run on clean checkout.\n- [ ] Production app uses Generic Host, DI and official `ModelContextProtocol` SDK for `stdio`.\n- [ ] No listener is opened on an HTTP port.\n- [ ] stdout reserved exclusively for MCP protocol messages.\n- [ ] No secrets in example config or history."
+  },
+  {
+    "planning_id": "02",
+    "title": "Register MCP stdio server and deterministic tool discovery test",
+    "labels": [
+      "type:feature",
+      "area:hosting",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M0",
+    "depends_on": "01",
+    "body": "**Labels:** `type:feature`, `area:hosting`, `priority:P0`, `size:M`  \n**Milestone:** M0  \n**Depends on:** 01\n\n**Description:** Configure server hosting using current pinned C# SDK; add a test-only tool first and protocol harness; later replace with approved tools.\n\n**Acceptance criteria:**\n- [ ] MCP `initialize` and `tools/list` succeed via a real child process.\n- [ ] Server starts/stops cleanly under cancellation.\n- [ ] Stderr logs do not corrupt stdout JSON-RPC.\n- [ ] Tool discovery test wired into CI."
+  },
+  {
+    "planning_id": "03",
+    "title": "Investigate current Investec API contract and credential permissions",
+    "labels": [
+      "type:research",
+      "area:investec-api",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M0",
+    "depends_on": "None",
+    "body": "**Labels:** `type:research`, `area:investec-api`, `priority:P0`, `size:M`  \n**Milestone:** M0  \n**Depends on:** None\n\n**Description:** Verify account, balance, transaction, token endpoint request and response schema, permissions, pagination, filtering, transaction date rules, errors, sandbox availability. Capture **synthetic** fixtures only.\n\n**Acceptance criteria:**\n- [ ] Document source URLs and verified endpoint schemas.\n- [ ] Confirm exact permitted scopes and key-level privileges for personal read-only access.\n- [ ] Confirm account ID handling and transaction history/date limits.\n- [ ] Record unresolved differences from Python upstream as issues.\n- [ ] No real tokens or financial data committed."
+  },
+  {
+    "planning_id": "04",
+    "title": "Configuration validation and safe local secret loading",
+    "labels": [
+      "type:security",
+      "area:hosting",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M0",
+    "depends_on": "01",
+    "body": "**Labels:** `type:security`, `area:hosting`, `priority:P0`, `size:M`  \n**Milestone:** M0  \n**Depends on:** 01\n\n**Description:** Typed options; fail-fast when credentials missing, write scopes configured, base URL invalid, range/response caps unsafely large. Adopt environment variables and optional OS secret-store documentation.\n\n**Acceptance criteria:**\n- [ ] Only approved production/sandbox base URL is accepted.\n- [ ] `transfers` and `beneficiarypayments` scopes are rejected.\n- [ ] No full secrets displayed in exceptions or logs.\n- [ ] `.env` excluded by Git and Docker contexts.\n- [ ] Tests cover invalid/missing settings."
+  },
+  {
+    "planning_id": "05",
+    "title": "Implement client-credentials token provider",
+    "labels": [
+      "type:feature",
+      "area:auth",
+      "priority:P0",
+      "size:L"
+    ],
+    "milestone": "M1",
+    "depends_on": "03,04",
+    "body": "**Labels:** `type:feature`, `area:auth`, `priority:P0`, `size:L`  \n**Milestone:** M1  \n**Depends on:** 03,04\n\n**Description:** OAuth client credentials flow against fixed Investec token URL with `x-api-key`; cache in memory only; refresh with `TimeProvider`, expiry buffer and concurrency lock.\n\n**Acceptance criteria:**\n- [ ] Correct form data and auth headers in mock handler.\n- [ ] Multiple simultaneous requests perform one token refresh.\n- [ ] Expired token refreshes and invalid credentials fail safely.\n- [ ] No token leak into logs/output.\n- [ ] Cancellation and timeout covered."
+  },
+  {
+    "planning_id": "06",
+    "title": "Build read-only endpoint gateway with HttpClientFactory",
+    "labels": [
+      "type:security",
+      "area:investec-api",
+      "priority:P0",
+      "size:L"
+    ],
+    "milestone": "M1",
+    "depends_on": "03,05",
+    "body": "**Labels:** `type:security`, `area:investec-api`, `priority:P0`, `size:L`  \n**Milestone:** M1  \n**Depends on:** 03,05\n\n**Description:** Implement allowlisted GET requests for accounts, balances, transactions, independent of MCP tools; use fixed origin and typed endpoint builders. Token POST remains isolated within auth service.\n\n**Acceptance criteria:**\n- [ ] No generic arbitrary-method or arbitrary-URL API exposed.\n- [ ] No POST/PUT/PATCH/DELETE banking requests can be produced.\n- [ ] HTTPS origin and endpoint whitelist verified in fake HTTP tests.\n- [ ] Timeouts and cancellation propagate; 429/5xx retry bounded.\n- [ ] Mocked transaction/balance GET returns typed envelopes."
+  },
+  {
+    "planning_id": "07",
+    "title": "Implement account discovery and authorization policy",
+    "labels": [
+      "type:security",
+      "area:investec-api",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M1",
+    "depends_on": "06",
+    "body": "**Labels:** `type:security`, `area:investec-api`, `priority:P0`, `size:M`  \n**Milestone:** M1  \n**Depends on:** 06\n\n**Description:** Derive account IDs from authenticated account endpoint and intersect with optional user-configured additional allowlist. No tool may bypass this policy.\n\n**Acceptance criteria:**\n- [ ] Unknown account IDs rejected without network call to account-specific endpoint.\n- [ ] Account IDs never treated as raw URL path segments.\n- [ ] Empty allowed set denies account-specific access.\n- [ ] Restrictive local allowlist cannot increase bank-provided authorization.\n- [ ] Refresh behavior documented and tested."
+  },
+  {
+    "planning_id": "08",
+    "title": "Typed Investec DTOs and response contract mapping",
+    "labels": [
+      "type:feature",
+      "area:investec-api",
+      "priority:P0",
+      "size:L"
+    ],
+    "milestone": "M1",
+    "depends_on": "03,06",
+    "body": "**Labels:** `type:feature`, `area:investec-api`, `priority:P0`, `size:L`  \n**Milestone:** M1  \n**Depends on:** 03,06\n\n**Description:** Model account, balance, transaction response envelopes; preserve decimals, dates, currency, transaction state and API pagination fields. Distinguish missing from zero.\n\n**Acceptance criteria:**\n- [ ] Synthetic Investec fixture deserialization tests pass.\n- [ ] Unknown upstream JSON fields tolerated, required field problems surfaced safely.\n- [ ] Money never parsed through binary floating point.\n- [ ] Raw account numbers excluded from model output by default.\n- [ ] No false completeness if API returns limited data."
+  },
+  {
+    "planning_id": "09",
+    "title": "Typed sanitized upstream errors and transient retry policy",
+    "labels": [
+      "type:security",
+      "area:investec-api",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M1",
+    "depends_on": "05,06",
+    "body": "**Labels:** `type:security`, `area:investec-api`, `priority:P0`, `size:M`  \n**Milestone:** M1  \n**Depends on:** 05,06\n\n**Description:** Convert HTTP errors into safe stable error codes and structured logs; optional bounded 401 refresh retry; honor 429 limits.\n\n**Acceptance criteria:**\n- [ ] Defined mapping for 400,401,403,404,429,5xx, network timeout, malformed response.\n- [ ] Upstream response bodies not surfaced to AI unchecked.\n- [ ] No unbounded retry loop.\n- [ ] All messages redact a supplied secret sentinel."
+  },
+  {
+    "planning_id": "10",
+    "title": "Implement `get_accounts` MCP tool",
+    "labels": [
+      "type:feature",
+      "area:tools",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M2",
+    "depends_on": "02,07,08",
+    "body": "**Labels:** `type:feature`, `area:tools`, `priority:P0`, `size:M`  \n**Milestone:** M2  \n**Depends on:** 02,07,08\n\n**Description:** No-argument tool emits sanitized list of authorized accounts with stable schema and read-only annotation.\n\n**Acceptance criteria:**\n- [ ] Tool listed as `get_accounts` with no user arguments.\n- [ ] Returns account ID and safe labels, no raw credentials.\n- [ ] Empty list valid.\n- [ ] Unauthorized accounts filtered by policy.\n- [ ] Contract tests match schema."
+  },
+  {
+    "planning_id": "11",
+    "title": "Implement `get_account_balance` MCP tool",
+    "labels": [
+      "type:feature",
+      "area:tools",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M2",
+    "depends_on": "07,08,10",
+    "body": "**Labels:** `type:feature`, `area:tools`, `priority:P0`, `size:M`  \n**Milestone:** M2  \n**Depends on:** 07,08,10\n\n**Description:** Authorized account input; typed balance response with retrieved timestamp and correct currency.\n\n**Acceptance criteria:**\n- [ ] Unauthorized account rejected pre-request.\n- [ ] Current/available balances differentiated, absent fields not made up.\n- [ ] Precision/currency tests pass.\n- [ ] Tool annotated read-only."
+  },
+  {
+    "planning_id": "12",
+    "title": "Implement `get_account_transactions` MCP tool",
+    "labels": [
+      "type:feature",
+      "area:tools",
+      "priority:P0",
+      "size:L"
+    ],
+    "milestone": "M2",
+    "depends_on": "07,08,10",
+    "body": "**Labels:** `type:feature`, `area:tools`, `priority:P0`, `size:L`  \n**Milestone:** M2  \n**Depends on:** 07,08,10\n\n**Description:** Bounded account transaction retrieval with required ISO dates, correct date semantics, and truthfully reported completeness.\n\n**Acceptance criteria:**\n- [ ] Enforce valid dates, `from <= to`, max window default 90 days.\n- [ ] Correct query parameter casing/format verified against current API.\n- [ ] Multi-page behavior handled or explicitly reported incomplete.\n- [ ] Output bounded by items and bytes; truncated flag or continuation present.\n- [ ] Preserve distinct transaction date vs posting date.\n- [ ] Tool annotated read-only."
+  },
+  {
+    "planning_id": "13",
+    "title": "Strict tool allowlist and forbidden-write security tests",
+    "labels": [
+      "type:security",
+      "area:tools",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M2",
+    "depends_on": "10,11,12",
+    "body": "**Labels:** `type:security`, `area:tools`, `priority:P0`, `size:M`  \n**Milestone:** M2  \n**Depends on:** 10,11,12\n\n**Description:** Test protocol `tools/list` exact set, and fake banking gateway for all tool paths. No payments, transfers, profiles, documents or generic HTTP tools in V1.\n\n**Acceptance criteria:**\n- [ ] Exact approved tool list is `get_accounts`, `get_account_balance`, `get_account_transactions`.\n- [ ] Invoking `transfer_money`, `pay_beneficiary`, `transfer_multiple`, `pay_multiple` fails as unknown tool.\n- [ ] No banking-resource non-GET request in any scenario.\n- [ ] Test guards against accidental future auto-discovery/registration."
+  },
+  {
+    "planning_id": "14",
+    "title": "Add transaction response bounds and pagination safeguards",
+    "labels": [
+      "type:security",
+      "area:tools",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M2",
+    "depends_on": "12",
+    "body": "**Labels:** `type:security`, `area:tools`, `priority:P0`, `size:M`  \n**Milestone:** M2  \n**Depends on:** 12\n\n**Description:** Enforce configurable results and bytes ceilings, small sensible defaults, and no silent truncation.\n\n**Acceptance criteria:**\n- [ ] Oversized fixture cannot cause unbounded return.\n- [ ] Explicit `truncated`/continuation metadata or safe error provided.\n- [ ] No claim of full monthly history when data incomplete.\n- [ ] Limits tested at boundaries."
+  },
+  {
+    "planning_id": "15",
+    "title": "Test token lifecycle, retries, failures and cancellation",
+    "labels": [
+      "type:test",
+      "area:testing",
+      "priority:P0",
+      "size:L"
+    ],
+    "milestone": "M3",
+    "depends_on": "05,09",
+    "body": "**Labels:** `type:test`, `area:testing`, `priority:P0`, `size:L`  \n**Milestone:** M3  \n**Depends on:** 05,09\n\n**Description:** Simulated time + fake HttpMessageHandler covering refresh races, expiry, retries and cancellation.\n\n**Acceptance criteria:**\n- [ ] Concurrency test ensures one refresh for simultaneous requests.\n- [ ] Timeout, 401,403,429,500 behaviors verified.\n- [ ] Tests deterministic with no external calls.\n- [ ] Retry attempts bounded and inspectable."
+  },
+  {
+    "planning_id": "16",
+    "title": "Add privacy/redaction and prompt-injection tests",
+    "labels": [
+      "type:security",
+      "area:testing",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M3",
+    "depends_on": "08,12",
+    "body": "**Labels:** `type:security`, `area:testing`, `priority:P0`, `size:M`  \n**Milestone:** M3  \n**Depends on:** 08,12\n\n**Description:** Synthetic transactions contain malicious instruction strings; upstream error body contains secret markers; test logs and tool responses for leaks.\n\n**Acceptance criteria:**\n- [ ] Tool does not treat transaction descriptions as executable instructions.\n- [ ] Secret sentinel absent from stdout/stderr/test snapshots.\n- [ ] Account numbers masked or omitted in MCP output.\n- [ ] No sensitive data in normal logs."
+  },
+  {
+    "planning_id": "17",
+    "title": "MCP end-to-end protocol harness",
+    "labels": [
+      "type:test",
+      "area:testing",
+      "priority:P0",
+      "size:L"
+    ],
+    "milestone": "M3",
+    "depends_on": "13,14",
+    "body": "**Labels:** `type:test`, `area:testing`, `priority:P0`, `size:L`  \n**Milestone:** M3  \n**Depends on:** 13,14\n\n**Description:** Spawn compiled server, use a real MCP client or framing harness to initialize, list and call all read tools backed by controlled fake Investec responses.\n\n**Acceptance criteria:**\n- [ ] Tool invocation and structured response schema pass.\n- [ ] Protocol stdout is clean; logs only on stderr.\n- [ ] Startup/shutdown/cancellation pass on target OS.\n- [ ] No live Investec credentials required."
+  },
+  {
+    "planning_id": "18",
+    "title": "Security and input fuzz cases",
+    "labels": [
+      "type:test",
+      "area:testing",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M3",
+    "depends_on": "07,12,13",
+    "body": "**Labels:** `type:test`, `area:testing`, `priority:P0`, `size:M`  \n**Milestone:** M3  \n**Depends on:** 07,12,13\n\n**Description:** Exercise malformed account IDs, path separators, unauthorized IDs, dates, large inputs and forbidden tools.\n\n**Acceptance criteria:**\n- [ ] No request reaches unintended route/host.\n- [ ] Error shape stable for invalid inputs.\n- [ ] Unsupported methods never issued.\n- [ ] Date and response limits cannot be bypassed by adversarial arguments."
+  },
+  {
+    "planning_id": "19",
+    "title": "GitHub Actions CI and supply chain checks",
+    "labels": [
+      "type:ci",
+      "area:testing",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M3",
+    "depends_on": "01,17",
+    "body": "**Labels:** `type:ci`, `area:testing`, `priority:P0`, `size:M`  \n**Milestone:** M3  \n**Depends on:** 01,17\n\n**Description:** CI workflow to restore locked dependencies, format, build, test, scan secrets, and build Docker image (Docker smoke may depend on #22).\n\n**Acceptance criteria:**\n- [ ] PR/main runs without banking credentials.\n- [ ] Failing tests stop pipeline.\n- [ ] Logs contain only synthetic data.\n- [ ] Dependency and secret scanning policy documented."
+  },
+  {
+    "planning_id": "20",
+    "title": "Claude Desktop local installation and manual acceptance",
+    "labels": [
+      "type:docs",
+      "area:hosting",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M4",
+    "depends_on": "17",
+    "body": "**Labels:** `type:docs`, `area:hosting`, `priority:P0`, `size:M`  \n**Milestone:** M4  \n**Depends on:** 17\n\n**Description:** Document native publish, Claude MCP config (`mcpServers`), secure secret provision, restart, logs and troubleshooting. Test with synthetic backend first.\n\n**Acceptance criteria:**\n- [ ] Claude enumerates exactly three tools.\n- [ ] All three tools work against mock/sandbox backend.\n- [ ] A malformed config has documented recovery steps.\n- [ ] No secrets embedded in shared example."
+  },
+  {
+    "planning_id": "21",
+    "title": "VS Code / Copilot local installation and acceptance",
+    "labels": [
+      "type:docs",
+      "area:hosting",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M4",
+    "depends_on": "17",
+    "body": "**Labels:** `type:docs`, `area:hosting`, `priority:P0`, `size:M`  \n**Milestone:** M4  \n**Depends on:** 17\n\n**Description:** Document user-profile MCP server config (`servers`), setup, tool permission review and troubleshooting on Windows and macOS/Linux.\n\n**Acceptance criteria:**\n- [ ] VS Code Copilot discovers and invokes exactly the three approved tools.\n- [ ] User-profile installation avoids committing finance-related workspace config.\n- [ ] Restart and output diagnostics documented.\n- [ ] No real credentials in issue attachments."
+  },
+  {
+    "planning_id": "22",
+    "title": "Docker multi-stage, non-root, stdio image",
+    "labels": [
+      "type:feature",
+      "area:docker",
+      "priority:P0",
+      "size:L"
+    ],
+    "milestone": "M4",
+    "depends_on": "01,17",
+    "body": "**Labels:** `type:feature`, `area:docker`, `priority:P0`, `size:L`  \n**Milestone:** M4  \n**Depends on:** 01,17\n\n**Description:** Build secure .NET 11 runtime image; no listening ports; no secret baked in; container processes MCP on stdin/stdout.\n\n**Acceptance criteria:**\n- [ ] Multi-stage build and non-root runtime.\n- [ ] `.dockerignore` excludes `.env`, test artifacts, git history.\n- [ ] `docker run --rm -i ...` works without `-t` or `-d`.\n- [ ] `docker image inspect` reveals no embedded secrets or exposed ports.\n- [ ] Tests with `--read-only`, `--cap-drop=ALL`, `no-new-privileges` (adapt runtime temp paths if needed)."
+  },
+  {
+    "planning_id": "23",
+    "title": "Docker protocol smoke test and client config",
+    "labels": [
+      "type:test",
+      "area:docker",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M4",
+    "depends_on": "22",
+    "body": "**Labels:** `type:test`, `area:docker`, `priority:P0`, `size:M`  \n**Milestone:** M4  \n**Depends on:** 22\n\n**Description:** Protocol tests over Docker stdio with fake backend, example Claude and VS Code launch JSON, no host port mapping.\n\n**Acceptance criteria:**\n- [ ] Container responds to initialize/list/call.\n- [ ] No protocol corruption or ANSI startup noise.\n- [ ] No network port published.\n- [ ] Docker stdout and stderr isolated."
+  },
+  {
+    "planning_id": "24",
+    "title": "Sandbox/live read-only manual verification",
+    "labels": [
+      "type:test",
+      "area:investec-api",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M5",
+    "depends_on": "20,21,23,03",
+    "body": "**Labels:** `type:test`, `area:investec-api`, `priority:P0`, `size:M`  \n**Milestone:** M5  \n**Depends on:** 20,21,23,03\n\n**Description:** Confirm newly provisioned read-only key works with authorized personal accounts; compare selected balances and short transaction periods to authoritative Investec view. Sandbox first.\n\n**Acceptance criteria:**\n- [ ] Only selected account IDs accessible.\n- [ ] Account and balance response shape verified.\n- [ ] Small date range transactions validated, including date meaning and pagination.\n- [ ] No real data persisted to repo, issues, or CI.\n- [ ] Record only non-sensitive pass/fail and divergences."
+  },
+  {
+    "planning_id": "25",
+    "title": "V1 documentation, troubleshooting, threat model",
+    "labels": [
+      "type:docs",
+      "area:docs",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M5",
+    "depends_on": "20,21,22",
+    "body": "**Labels:** `type:docs`, `area:docs`, `priority:P0`, `size:M`  \n**Milestone:** M5  \n**Depends on:** 20,21,22\n\n**Description:** Consolidate README, local setup, Docker instructions, security/privacy posture, commands and maintenance guidance for .NET developer.\n\n**Acceptance criteria:**\n- [ ] One-command restore/test/publish instructions.\n- [ ] Claude/VS Code native and Docker configuration examples.\n- [ ] Clear disclosure that models may send financial data to hosted AI providers.\n- [ ] Supported environments, permission management and secret rotation documented.\n- [ ] Upgrade path to remote HTTP kept as future ADR, not implemented."
+  },
+  {
+    "planning_id": "26",
+    "title": "V1 release gate and tagged build",
+    "labels": [
+      "type:chore",
+      "area:hosting",
+      "priority:P0",
+      "size:M"
+    ],
+    "milestone": "M5",
+    "depends_on": "13,17,19,20,21,23,24,25",
+    "body": "**Labels:** `type:chore`, `area:hosting`, `priority:P0`, `size:M`  \n**Milestone:** M5  \n**Depends on:** 13,17,19,20,21,23,24,25\n\n**Description:** Run and document V1 DoD, review security exceptions, tag `v0.1.0` when criteria are met, publish no secrets.\n\n**Acceptance criteria:**\n- [ ] All P0 issues complete or documented release blocker.\n- [ ] CI green, synthetic end-to-end and Docker tests green.\n- [ ] Claude Desktop and Copilot acceptance passed.\n- [ ] No payment permissions or tools.\n- [ ] Manual live smoke report contains no private banking data.\n- [ ] Release notes and known limitations published.\n\n## Optional post-V1 issues (do not put in V1 release milestone)\n- Pending transaction endpoint, once verified.\n- Deterministic `get_spending_summary` / categorization and transfer exclusion rules.\n- Secure local persistence and retention lifecycle.\n- Streamable HTTP, remote MCP authorization and ChatGPT connectivity.\n- Desktop packaging / native installer / MCP desktop extension.\n\n## GitHub project configuration\n\n**Issue templates** (after repository is created): feature, security, defect. **Suggested Project fields:** Status, Priority, Milestone, Size, Target Release. **Views:** Board grouped by Status; Table grouped by Milestone; Blocked issues filter. **Branch naming:** `feat/NN-short-description`, `security/NN-short-description`, `test/NN-short-description`. **PR checks:** CI pass, linked issue, tests for changed behavior, security checklist for banking/API changes.\n\n**Suggested epics (optional):** EPIC-A Secure banking foundation (#03\u201309), EPIC-B MCP tools (#10\u201314), EPIC-C Verification and CI (#15\u201319), EPIC-D Desktop delivery and container (#20\u201326). Issue numbers above are *planning identifiers*, not actual GitHub issue numbers. Actual numbers are assigned when created.\n\n## GitHub CLI import guidance\n\nWhen a user-owned destination repository is selected, create labels/milestones and issues there. No issues have been created yet. To avoid guessing issue numbers or assuming dependency identifiers, import in order, then rewrite dependency links using the assigned GitHub issue numbers. An optional machine-readable backlog JSON is included separately for scripting."
+  }
+]

@@ -1,0 +1,21 @@
+# Project-local SDK
+/.dotnet/
+
+# .NET build, test, and publish output
+[Bb]in/
+[Oo]bj/
+TestResults/
+/publish/
+*.binlog
+
+# IDE and machine-local settings
+.vs/
+.idea/
+*.user
+*.suo
+
+# Local credentials and overrides
+.env
+.env.*
+!.env.example
+appsettings.Local.json

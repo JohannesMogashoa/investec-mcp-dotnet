@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/InvestecMcp/InvestecMcp.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/InvestecMcp.Tests/InvestecMcp.Tests.csproj" />
+  </Folder>
+</Solution>
