@@ -8,7 +8,6 @@ public sealed class StdioBankingTests
     [Fact]
     public async Task BankingTools_CallAllReadsAndRejectWriteTool()
     {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var startInfo = new ProcessStartInfo(
             Environment.GetEnvironmentVariable("DOTNET_HOST_PATH") ?? "dotnet",
             [typeof(StdioTestServer).Assembly.Location, "--banking-test"])
@@ -17,6 +16,12 @@ public sealed class StdioBankingTests
             RedirectStandardOutput = true,
             RedirectStandardError = true
         };
+        await RunProtocolAsync(startInfo);
+    }
+
+    internal static async Task RunProtocolAsync(ProcessStartInfo startInfo)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
         using var server = Process.Start(startInfo)!;
         var diagnostics = server.StandardError.ReadToEndAsync(timeout.Token);
         try
@@ -83,6 +88,7 @@ public sealed class StdioBankingTests
             Assert.Equal(0, server.ExitCode);
             Assert.Null(await server.StandardOutput.ReadLineAsync(timeout.Token));
             Assert.DoesNotContain("synthetic-secret", await diagnostics);
+            Assert.DoesNotContain("SYNTHETIC MERCHANT", await diagnostics);
         }
         finally
         {

@@ -9,6 +9,7 @@ namespace InvestecMcp.Tests;
 public sealed class BankingSecurityTests
 {
     private const string AccountId = "synthetic-account";
+    private static readonly TimeProvider Clock = new FixedTimeProvider();
 
     [Theory]
     [InlineData("../transfer")]
@@ -94,8 +95,53 @@ public sealed class BankingSecurityTests
         Assert.Equal("INCOMPLETE_OR_INVALID_RESPONSE", error.Message);
     }
 
+    [Fact]
+    public async Task ConflictingCurrentPage_IsReportedAsIncomplete()
+    {
+        var gateway = new FakeGateway { CurrentPage = 2 };
+        var tools = CreateTools(gateway);
+
+        var error = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            tools.GetAccountTransactionsAsync(AccountId, "2025-01-01", "2025-01-02", CancellationToken.None));
+        Assert.Equal("INCOMPLETE_OR_INVALID_RESPONSE", error.Message);
+        Assert.Equal(0, gateway.BalanceRequests);
+    }
+
+    [Fact]
+    public async Task TransactionItemLimit_AcceptsBoundaryAndRejectsOneOver()
+    {
+        var atLimit = new FakeGateway { TransactionCount = 2 };
+        var accepted = await CreateTools(atLimit, maxTransactionItems: 2)
+            .GetAccountTransactionsAsync(AccountId, "2025-01-01", "2025-01-02", CancellationToken.None);
+        Assert.Equal(2, JsonSerializer.SerializeToElement(accepted).GetProperty("count").GetInt32());
+
+        var overLimit = new FakeGateway { TransactionCount = 3 };
+        var error = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            CreateTools(overLimit, maxTransactionItems: 2)
+                .GetAccountTransactionsAsync(AccountId, "2025-01-01", "2025-01-02", CancellationToken.None));
+        Assert.Equal("INCOMPLETE_OR_INVALID_RESPONSE", error.Message);
+        Assert.Equal(0, overLimit.BalanceRequests);
+    }
+
+    [Fact]
+    public async Task TransactionByteLimit_AcceptsExactSizeAndRejectsOneByteLess()
+    {
+        var gateway = new FakeGateway { Description = new string('X', 1200) };
+        var result = await CreateTools(gateway)
+            .GetAccountTransactionsAsync(AccountId, "2025-01-01", "2025-01-02", CancellationToken.None);
+        var size = JsonSerializer.SerializeToUtf8Bytes(result).Length;
+
+        await CreateTools(new FakeGateway { Description = gateway.Description }, maxResponseBytes: size)
+            .GetAccountTransactionsAsync(AccountId, "2025-01-01", "2025-01-02", CancellationToken.None);
+        var error = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            CreateTools(new FakeGateway { Description = gateway.Description }, maxResponseBytes: size - 1)
+                .GetAccountTransactionsAsync(AccountId, "2025-01-01", "2025-01-02", CancellationToken.None));
+        Assert.Equal("RESPONSE_TOO_LARGE", error.Message);
+    }
+
     private static BankingTools CreateTools(
-        FakeGateway gateway, string? allowedAccountIds = null, int? maxResponseBytes = null)
+        FakeGateway gateway, string? allowedAccountIds = null, int? maxResponseBytes = null,
+        int? maxTransactionItems = null)
     {
         var settings = new Dictionary<string, string?>
         {
@@ -104,12 +150,19 @@ public sealed class BankingSecurityTests
             ["INVESTEC_API_KEY"] = "synthetic-key",
             ["INVESTEC_SCOPES"] = "accounts",
             ["INVESTEC_ALLOWED_ACCOUNT_IDS"] = allowedAccountIds,
-            ["INVESTEC_MAX_RESPONSE_BYTES"] = maxResponseBytes?.ToString()
+            ["INVESTEC_MAX_RESPONSE_BYTES"] = maxResponseBytes?.ToString(),
+            ["INVESTEC_MAX_TRANSACTION_ITEMS"] = maxTransactionItems?.ToString()
         };
         var options = InvestecOptions.FromConfiguration(
             new ConfigurationBuilder().AddInMemoryCollection(settings).Build());
         return new BankingTools(gateway,
-            new AccountAuthorization(gateway, options, TimeProvider.System), options, TimeProvider.System);
+            new AccountAuthorization(gateway, options, Clock), options, Clock);
+    }
+
+    private sealed class FixedTimeProvider : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() =>
+            new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
     }
 
     private sealed class FakeGateway : IInvestecGateway
@@ -120,6 +173,8 @@ public sealed class BankingSecurityTests
         public string? LastTransactionAccountId { get; private set; }
         public string Description { get; init; } = "SYNTHETIC MERCHANT";
         public int TotalPages { get; init; } = 1;
+        public int? CurrentPage { get; init; }
+        public int TransactionCount { get; init; } = 1;
 
         public Task<InvestecResponse<AccountListData>> GetAccountsAsync(CancellationToken cancellationToken)
         {
@@ -161,9 +216,8 @@ public sealed class BankingSecurityTests
             {
                 Data = new TransactionListData
                 {
-                    Transactions =
-                    [
-                        new InvestecTransaction
+                    Transactions = Enumerable.Range(0, TransactionCount)
+                        .Select(_ => new InvestecTransaction
                         {
                             AccountId = accountId,
                             Description = Description,
@@ -172,10 +226,9 @@ public sealed class BankingSecurityTests
                             TransactionDate = fromDate,
                             Amount = 1.23m,
                             Status = "POSTED"
-                        }
-                    ]
+                        }).ToList()
                 },
-                Meta = new InvestecMeta { TotalPages = TotalPages }
+                Meta = new InvestecMeta { TotalPages = TotalPages, CurrentPage = CurrentPage }
             });
         }
     }

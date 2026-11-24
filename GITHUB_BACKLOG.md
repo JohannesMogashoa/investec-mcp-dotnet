@@ -37,9 +37,9 @@
 
 **Acceptance criteria:**
 - [ ] `dotnet restore`, `dotnet build -c Release`, `dotnet test` run on clean checkout.
-- [ ] Production app uses Generic Host, DI and official `ModelContextProtocol` SDK for `stdio`.
-- [ ] No listener is opened on an HTTP port.
-- [ ] stdout reserved exclusively for MCP protocol messages.
+- [x] Production app uses Generic Host, DI and official `ModelContextProtocol` SDK for `stdio`.
+- [x] No listener is opened on an HTTP port.
+- [x] stdout reserved exclusively for MCP protocol messages.
 - [ ] No secrets in example config or history.
 
 ### #02 — Register MCP stdio server and deterministic tool discovery test
@@ -50,10 +50,10 @@
 **Description:** Configure server hosting using current pinned C# SDK; add a test-only tool first and protocol harness; later replace with approved tools.
 
 **Acceptance criteria:**
-- [ ] MCP `initialize` and `tools/list` succeed via a real child process.
-- [ ] Server starts/stops cleanly under cancellation.
-- [ ] Stderr logs do not corrupt stdout JSON-RPC.
-- [ ] Tool discovery test wired into CI.
+- [x] MCP `initialize` and `tools/list` succeed via a real child process.
+- [x] Server starts/stops cleanly under cancellation.
+- [x] Stderr logs do not corrupt stdout JSON-RPC.
+- [x] Tool discovery test wired into CI.
 
 ### #03 — Investigate current Investec API contract and credential permissions
 **Labels:** `type:research`, `area:investec-api`, `priority:P0`, `size:M`  
@@ -65,13 +65,13 @@
 **Research:** [Investec Private Banking API contract](docs/investec-api-contract.md)
 
 **Acceptance criteria:**
-- [ ] Document source URLs and verified endpoint schemas.
+- [x] Document source URLs and verified endpoint schemas.
 - [ ] Confirm exact permitted scopes and key-level privileges for personal read-only access.
 - [ ] Confirm account ID handling and transaction history/date limits.
-- [ ] Record unresolved differences from Python upstream as issues.
-- [ ] No real tokens or financial data committed.
+- [x] Record unresolved differences from Python upstream as issues.
+- [x] No real tokens or financial data committed.
 
-**Remaining work:** Verify production read scopes and key permission labels, transaction date limits and pagination parameters, and upstream error details. Update the contract notes with sources and confirmed behavior.
+**Remaining work:** The local Private Bank OpenAPI 1.0.1 file declares the three read scopes and omitted-date defaults, but key permission labels, live scope enforcement, transaction date limits, and upstream error details need sandbox or production verification. The document declares no transaction paging request parameter despite returning `meta.totalPages`; obtain that contract from Investec before automatic paging.
 
 ### #04 — Configuration validation and safe local secret loading
 **Labels:** `type:security`, `area:hosting`, `priority:P0`, `size:M`  
@@ -81,11 +81,11 @@
 **Description:** Typed options; fail-fast when credentials missing, write scopes configured, base URL invalid, range/response caps unsafely large. Adopt environment variables and optional OS secret-store documentation.
 
 **Acceptance criteria:**
-- [ ] Only approved production/sandbox base URL is accepted.
-- [ ] `transfers` and `beneficiarypayments` scopes are rejected.
-- [ ] No full secrets displayed in exceptions or logs.
-- [ ] `.env` excluded by Git and Docker contexts.
-- [ ] Tests cover invalid/missing settings.
+- [x] Only approved production/sandbox base URL is accepted.
+- [x] `transfers` and `beneficiarypayments` scopes are rejected.
+- [x] No full secrets displayed in exceptions or logs.
+- [x] `.env` excluded by Git and Docker contexts.
+- [x] Tests cover invalid/missing settings.
 
 ### #05 — Implement client-credentials token provider
 **Labels:** `type:feature`, `area:auth`, `priority:P0`, `size:L`  
@@ -95,11 +95,11 @@
 **Description:** OAuth client credentials flow against fixed Investec token URL with `x-api-key`; cache in memory only; refresh with `TimeProvider`, expiry buffer and concurrency lock.
 
 **Acceptance criteria:**
-- [ ] Correct form data and auth headers in mock handler.
-- [ ] Multiple simultaneous requests perform one token refresh.
-- [ ] Expired token refreshes and invalid credentials fail safely.
-- [ ] No token leak into logs/output.
-- [ ] Cancellation and timeout covered.
+- [x] Correct form data and auth headers in mock handler.
+- [x] Multiple simultaneous requests perform one token refresh.
+- [x] Expired token refreshes and invalid credentials fail safely.
+- [x] No token leak into logs/output.
+- [x] Cancellation and timeout covered.
 
 ### #06 — Build read-only endpoint gateway with HttpClientFactory
 **Labels:** `type:security`, `area:investec-api`, `priority:P0`, `size:L`  
@@ -109,11 +109,11 @@
 **Description:** Implement allowlisted GET requests for accounts, balances, transactions, independent of MCP tools; use fixed origin and typed endpoint builders. Token POST remains isolated within auth service.
 
 **Acceptance criteria:**
-- [ ] No generic arbitrary-method or arbitrary-URL API exposed.
-- [ ] No POST/PUT/PATCH/DELETE banking requests can be produced.
-- [ ] HTTPS origin and endpoint whitelist verified in fake HTTP tests.
-- [ ] Timeouts and cancellation propagate; 429/5xx retry bounded.
-- [ ] Mocked transaction/balance GET returns typed envelopes.
+- [x] No generic arbitrary-method or arbitrary-URL API exposed.
+- [x] No POST/PUT/PATCH/DELETE banking requests can be produced.
+- [x] HTTPS origin and endpoint whitelist verified in fake HTTP tests.
+- [x] Timeouts and cancellation propagate; 429/5xx retry bounded.
+- [x] Mocked transaction/balance GET returns typed envelopes.
 
 ### #07 — Implement account discovery and authorization policy
 **Labels:** `type:security`, `area:investec-api`, `priority:P0`, `size:M`  
@@ -123,11 +123,11 @@
 **Description:** Derive account IDs from authenticated account endpoint and intersect with optional user-configured additional allowlist. No tool may bypass this policy.
 
 **Acceptance criteria:**
-- [ ] Unknown account IDs rejected without network call to account-specific endpoint.
-- [ ] Account IDs never treated as raw URL path segments.
-- [ ] Empty allowed set denies account-specific access.
-- [ ] Restrictive local allowlist cannot increase bank-provided authorization.
-- [ ] Refresh behavior documented and tested.
+- [x] Unknown account IDs rejected without network call to account-specific endpoint.
+- [x] Account IDs never treated as raw URL path segments.
+- [x] Empty allowed set denies account-specific access.
+- [x] Restrictive local allowlist cannot increase bank-provided authorization.
+- [x] Refresh behavior documented and tested.
 
 ### #08 — Typed Investec DTOs and response contract mapping
 **Labels:** `type:feature`, `area:investec-api`, `priority:P0`, `size:L`  
@@ -137,11 +137,11 @@
 **Description:** Model account, balance, transaction response envelopes; preserve decimals, dates, currency, transaction state and API pagination fields. Distinguish missing from zero.
 
 **Acceptance criteria:**
-- [ ] Synthetic Investec fixture deserialization tests pass.
-- [ ] Unknown upstream JSON fields tolerated, required field problems surfaced safely.
-- [ ] Money never parsed through binary floating point.
-- [ ] Raw account numbers excluded from model output by default.
-- [ ] No false completeness if API returns limited data.
+- [x] Synthetic Investec fixture deserialization tests pass.
+- [x] Unknown upstream JSON fields tolerated, required field problems surfaced safely.
+- [x] Money never parsed through binary floating point.
+- [x] Raw account numbers excluded from model output by default.
+- [x] No false completeness if API returns limited data.
 
 ### #09 — Typed sanitized upstream errors and transient retry policy
 **Labels:** `type:security`, `area:investec-api`, `priority:P0`, `size:M`  
@@ -151,10 +151,10 @@
 **Description:** Convert HTTP errors into safe stable error codes and structured logs; optional bounded 401 refresh retry; honor 429 limits.
 
 **Acceptance criteria:**
-- [ ] Defined mapping for 400,401,403,404,429,5xx, network timeout, malformed response.
-- [ ] Upstream response bodies not surfaced to AI unchecked.
-- [ ] No unbounded retry loop.
-- [ ] All messages redact a supplied secret sentinel.
+- [x] Defined mapping for 400,401,403,404,429,5xx, network timeout, malformed response.
+- [x] Upstream response bodies not surfaced to AI unchecked.
+- [x] No unbounded retry loop.
+- [x] All messages redact a supplied secret sentinel.
 
 ### #10 — Implement `get_accounts` MCP tool
 **Labels:** `type:feature`, `area:tools`, `priority:P0`, `size:M`  
@@ -164,11 +164,11 @@
 **Description:** No-argument tool emits sanitized list of authorized accounts with stable schema and read-only annotation.
 
 **Acceptance criteria:**
-- [ ] Tool listed as `get_accounts` with no user arguments.
-- [ ] Returns account ID and safe labels, no raw credentials.
-- [ ] Empty list valid.
-- [ ] Unauthorized accounts filtered by policy.
-- [ ] Contract tests match schema.
+- [x] Tool listed as `get_accounts` with no user arguments.
+- [x] Returns account ID and safe labels, no raw credentials.
+- [x] Empty list valid.
+- [x] Unauthorized accounts filtered by policy.
+- [x] Contract tests match schema.
 
 ### #11 — Implement `get_account_balance` MCP tool
 **Labels:** `type:feature`, `area:tools`, `priority:P0`, `size:M`  
@@ -178,10 +178,10 @@
 **Description:** Authorized account input; typed balance response with retrieved timestamp and correct currency.
 
 **Acceptance criteria:**
-- [ ] Unauthorized account rejected pre-request.
-- [ ] Current/available balances differentiated, absent fields not made up.
-- [ ] Precision/currency tests pass.
-- [ ] Tool annotated read-only.
+- [x] Unauthorized account rejected pre-request.
+- [x] Current/available balances differentiated, absent fields not made up.
+- [x] Precision/currency tests pass.
+- [x] Tool annotated read-only.
 
 ### #12 — Implement `get_account_transactions` MCP tool
 **Labels:** `type:feature`, `area:tools`, `priority:P0`, `size:L`  
@@ -191,12 +191,12 @@
 **Description:** Bounded account transaction retrieval with required ISO dates, correct date semantics, and truthfully reported completeness.
 
 **Acceptance criteria:**
-- [ ] Enforce valid dates, `from <= to`, max window default 90 days.
-- [ ] Correct query parameter casing/format verified against current API.
-- [ ] Multi-page behavior handled or explicitly reported incomplete.
-- [ ] Output bounded by items and bytes; truncated flag or continuation present.
-- [ ] Preserve distinct transaction date vs posting date.
-- [ ] Tool annotated read-only.
+- [x] Enforce valid dates, `from <= to`, max window default 90 days.
+- [x] Correct query parameter casing/format verified against current API.
+- [x] Multi-page behavior handled or explicitly reported incomplete.
+- [x] Output bounded by items and bytes; truncated flag or continuation present.
+- [x] Preserve distinct transaction date vs posting date.
+- [x] Tool annotated read-only.
 
 **Remaining work:** Implement page retrieval after #03 confirms the paging contract. Until then, keep reporting incomplete results when additional pages exist.
 
@@ -208,10 +208,10 @@
 **Description:** Test protocol `tools/list` exact set, and fake banking gateway for all tool paths. No payments, transfers, profiles, documents or generic HTTP tools in V1.
 
 **Acceptance criteria:**
-- [ ] Exact approved tool list is `get_accounts`, `get_account_balance`, `get_account_transactions`.
-- [ ] Invoking `transfer_money`, `pay_beneficiary`, `transfer_multiple`, `pay_multiple` fails as unknown tool.
-- [ ] No banking-resource non-GET request in any scenario.
-- [ ] Test guards against accidental future auto-discovery/registration.
+- [x] Exact approved tool list is `get_accounts`, `get_account_balance`, `get_account_transactions`.
+- [x] Invoking `transfer_money`, `pay_beneficiary`, `transfer_multiple`, `pay_multiple` fails as unknown tool.
+- [x] No banking-resource non-GET request in any scenario.
+- [x] Test guards against accidental future auto-discovery/registration.
 
 ### #14 — Add transaction response bounds and pagination safeguards
 **Labels:** `type:security`, `area:tools`, `priority:P0`, `size:M`  
@@ -221,12 +221,12 @@
 **Description:** Enforce configurable results and bytes ceilings, small sensible defaults, and no silent truncation.
 
 **Acceptance criteria:**
-- [ ] Oversized fixture cannot cause unbounded return.
-- [ ] Explicit `truncated`/continuation metadata or safe error provided.
-- [ ] No claim of full monthly history when data incomplete.
-- [ ] Limits tested at boundaries.
+- [x] Oversized fixture cannot cause unbounded return.
+- [x] Explicit `truncated`/continuation metadata or safe error provided.
+- [x] No claim of full monthly history when data incomplete.
+- [x] Limits tested at boundaries for a single page.
 
-**Remaining work:** Verify item and byte limits against paging behavior from #03 and #12, then test boundary cases across all pages.
+**Remaining work:** Verify item and byte limits against paging behavior from #03 and #12, then test boundary cases across all pages. Contradictory `currentPage` metadata on a purported single-page result is rejected now.
 
 ### #15 — Test token lifecycle, retries, failures and cancellation
 **Labels:** `type:test`, `area:testing`, `priority:P0`, `size:L`  
@@ -236,10 +236,10 @@
 **Description:** Simulated time + fake HttpMessageHandler covering refresh races, expiry, retries and cancellation.
 
 **Acceptance criteria:**
-- [ ] Concurrency test ensures one refresh for simultaneous requests.
-- [ ] Timeout, 401,403,429,500 behaviors verified.
-- [ ] Tests deterministic with no external calls.
-- [ ] Retry attempts bounded and inspectable.
+- [x] Concurrency test ensures one refresh for simultaneous requests.
+- [x] Timeout, 401,403,429,500 behaviors verified.
+- [x] Tests deterministic with no external calls.
+- [x] Retry attempts bounded and inspectable.
 
 ### #16 — Add privacy/redaction and prompt-injection tests
 **Labels:** `type:security`, `area:testing`, `priority:P0`, `size:M`  
@@ -249,10 +249,10 @@
 **Description:** Synthetic transactions contain malicious instruction strings; upstream error body contains secret markers; test logs and tool responses for leaks.
 
 **Acceptance criteria:**
-- [ ] Tool does not treat transaction descriptions as executable instructions.
-- [ ] Secret sentinel absent from stdout/stderr/test snapshots.
-- [ ] Account numbers masked or omitted in MCP output.
-- [ ] No sensitive data in normal logs.
+- [x] Tool does not treat transaction descriptions as executable instructions.
+- [x] Secret sentinel absent from stdout/stderr/test snapshots.
+- [x] Account numbers masked or omitted in MCP output.
+- [x] No sensitive data in normal logs.
 
 ### #17 — MCP end-to-end protocol harness
 **Labels:** `type:test`, `area:testing`, `priority:P0`, `size:L`  
@@ -262,10 +262,10 @@
 **Description:** Spawn compiled server, use a real MCP client or framing harness to initialize, list and call all read tools backed by controlled fake Investec responses.
 
 **Acceptance criteria:**
-- [ ] Tool invocation and structured response schema pass.
-- [ ] Protocol stdout is clean; logs only on stderr.
-- [ ] Startup/shutdown/cancellation pass on target OS.
-- [ ] No live Investec credentials required.
+- [x] Tool invocation and structured response schema pass.
+- [x] Protocol stdout is clean; logs only on stderr.
+- [x] Startup/shutdown/cancellation pass on target OS.
+- [x] No live Investec credentials required.
 
 ### #18 — Security and input fuzz cases
 **Labels:** `type:test`, `area:testing`, `priority:P0`, `size:M`  
@@ -275,10 +275,10 @@
 **Description:** Exercise malformed account IDs, path separators, unauthorized IDs, dates, large inputs and forbidden tools.
 
 **Acceptance criteria:**
-- [ ] No request reaches unintended route/host.
-- [ ] Error shape stable for invalid inputs.
-- [ ] Unsupported methods never issued.
-- [ ] Date and response limits cannot be bypassed by adversarial arguments.
+- [x] No request reaches unintended route/host.
+- [x] Error shape stable for invalid inputs.
+- [x] Unsupported methods never issued.
+- [x] Date and response limits cannot be bypassed by adversarial arguments.
 
 ### #19 — GitHub Actions CI and supply chain checks
 **Labels:** `type:ci`, `area:testing`, `priority:P0`, `size:M`  
@@ -288,10 +288,10 @@
 **Description:** CI workflow to restore locked dependencies, format, build, test, scan secrets, build the Docker image, and run the Docker protocol smoke test after #23 is ready.
 
 **Acceptance criteria:**
-- [ ] PR/main runs without banking credentials.
-- [ ] Failing tests stop pipeline.
-- [ ] Logs contain only synthetic data.
-- [ ] Dependency and secret scanning policy documented.
+- [x] PR/main runs without banking credentials.
+- [x] Failing tests stop pipeline.
+- [x] Logs contain only synthetic data.
+- [x] Dependency and secret scanning policy documented.
 
 ### #20 — Claude Desktop local installation and manual acceptance
 **Labels:** `type:docs`, `area:hosting`, `priority:P0`, `size:M`  
@@ -303,10 +303,12 @@
 **Acceptance criteria:**
 - [ ] Claude enumerates exactly three tools.
 - [ ] All three tools work against mock/sandbox backend.
-- [ ] A malformed config has documented recovery steps.
-- [ ] No secrets embedded in shared example.
+- [x] A malformed config has documented recovery steps.
+- [x] No secrets embedded in shared example.
 
 **Remaining work:** Complete the documented setup and manual acceptance using the synthetic backend, then sandbox if available.
+
+Sandbox onboarding is documented in [Local configuration](docs/configuration.md). Verify the Claude Desktop launch with sandbox credentials during acceptance.
 
 ### #21 — VS Code / Copilot local installation and acceptance
 **Labels:** `type:docs`, `area:hosting`, `priority:P0`, `size:M`  
@@ -317,11 +319,13 @@
 
 **Acceptance criteria:**
 - [ ] VS Code Copilot discovers and invokes exactly the three approved tools.
-- [ ] User-profile installation avoids committing finance-related workspace config.
-- [ ] Restart and output diagnostics documented.
+- [x] User-profile installation avoids committing finance-related workspace config.
+- [x] Restart and output diagnostics documented.
 - [ ] No real credentials in issue attachments.
 
 **Remaining work:** Complete the documented setup and manual acceptance using the synthetic backend, then sandbox if available.
+
+Sandbox onboarding is documented in [Local configuration](docs/configuration.md). Verify the VS Code/Copilot launch with sandbox credentials during acceptance.
 
 ### #22 — Docker multi-stage, non-root, stdio image
 **Labels:** `type:feature`, `area:docker`, `priority:P0`, `size:L`  
@@ -331,11 +335,11 @@
 **Description:** Build secure .NET 11 runtime image; no listening ports; no secret baked in; container processes MCP on stdin/stdout.
 
 **Acceptance criteria:**
-- [ ] Multi-stage build and non-root runtime.
-- [ ] `.dockerignore` excludes `.env`, test artifacts, git history.
-- [ ] `docker run --rm -i ...` works without `-t` or `-d`.
-- [ ] `docker image inspect` reveals no embedded secrets or exposed ports.
-- [ ] Tests with `--read-only`, `--cap-drop=ALL`, `no-new-privileges` (adapt runtime temp paths if needed).
+- [x] Multi-stage build and non-root runtime.
+- [x] `.dockerignore` excludes `.env`, test artifacts, git history.
+- [x] `docker run --rm -i ...` works without `-t` or `-d`.
+- [x] `docker image inspect` reveals no embedded secrets or exposed ports.
+- [x] Tests with `--read-only`, `--cap-drop=ALL`, `no-new-privileges` (adapt runtime temp paths if needed).
 
 ### #23 — Docker protocol smoke test and client config
 **Labels:** `type:test`, `area:docker`, `priority:P0`, `size:M`  
@@ -345,19 +349,19 @@
 **Description:** Protocol tests over Docker stdio with fake backend, example Claude and VS Code launch JSON, no host port mapping.
 
 **Acceptance criteria:**
-- [ ] Container responds to initialize/list/call.
-- [ ] No protocol corruption or ANSI startup noise.
-- [ ] No network port published.
-- [ ] Docker stdout and stderr isolated.
+- [x] Container responds to initialize/list/call.
+- [x] No protocol corruption or ANSI startup noise.
+- [x] No network port published.
+- [x] Docker stdout and stderr isolated.
 
-**Remaining work:** Run the MCP initialize, discovery, and tool-call smoke test through Docker. Verify no port publishing and separate stdout/stderr.
+**Verification:** `protocol-test` target passes initialize, discovery, and tool calls against a synthetic gateway with network disabled and restricted runtime flags. The default production image remains separate.
 
 ### #24 — Sandbox/live read-only manual verification
 **Labels:** `type:test`, `area:investec-api`, `priority:P0`, `size:M`  
 **Milestone:** M5  
 **Depends on:** 20,21,23,03
 
-**Description:** Confirm newly provisioned read-only key works with authorized personal accounts; compare selected balances and short transaction periods to authoritative Investec view. Sandbox first.
+**Description:** Verify sandbox mock-data account, balance, and transaction calls first. Then confirm a newly provisioned read-only production key works with authorized personal accounts and compare selected balances and short transaction periods to authoritative Investec view.
 
 **Acceptance criteria:**
 - [ ] Only selected account IDs accessible.
@@ -366,7 +370,7 @@
 - [ ] No real data persisted to repo, issues, or CI.
 - [ ] Record only non-sensitive pass/fail and divergences.
 
-**Remaining work:** Verify reads against the sandbox first. Then, if live access is explicitly opted into, use a restricted personal key and record only sanitized results.
+**Remaining work:** Run the read-only sandbox verification using the documented sandbox mode. For production validation, use a restricted personal key and record only sanitized results.
 
 ### #25 — V1 documentation, troubleshooting, threat model
 **Labels:** `type:docs`, `area:docs`, `priority:P0`, `size:M`  
@@ -376,13 +380,15 @@
 **Description:** Consolidate README, local setup, Docker instructions, security/privacy posture, commands and maintenance guidance for .NET developer.
 
 **Acceptance criteria:**
-- [ ] One-command restore/test/publish instructions.
-- [ ] Claude/VS Code native and Docker configuration examples.
-- [ ] Clear disclosure that models may send financial data to hosted AI providers.
-- [ ] Supported environments, permission management and secret rotation documented.
-- [ ] Upgrade path to remote HTTP kept as future ADR, not implemented.
+- [x] One-command restore/test/publish instructions.
+- [x] Claude/VS Code native and Docker configuration examples.
+- [x] Clear disclosure that models may send financial data to hosted AI providers.
+- [x] Supported environments, permission management and secret rotation documented.
+- [x] Upgrade path to remote HTTP kept as future ADR, not implemented.
 
-**Remaining work:** Consolidate setup, troubleshooting, and threat-model documentation after #20–#23 acceptance results are available.
+**Remaining work:** Reconcile observed Claude Desktop and Copilot behavior after manual acceptance. Current setup and security guides are documented but desktop behavior remains unverified.
+
+Document the sandbox as the recommended exploration mode, including its mock-data and stateless behavior and the connector's read-only tools.
 
 ### #26 — V1 release gate and tagged build
 **Labels:** `type:chore`, `area:hosting`, `priority:P0`, `size:M`  

@@ -1,6 +1,22 @@
 # Investec MCP
 
-Investec MCP is a .NET 11 server for the planned read-only Investec banking integration. The baseline starts a local MCP server over standard input and output. It registers zero banking tools and requires no Investec credentials.
+Investec MCP is a .NET 11 stdio server that provides three read-only Investec tools for listing accounts, reading balances, and retrieving transactions. You can try the connector with Investec's stateless mock-data sandbox before configuring a production key.
+
+## Try sandbox mode
+
+Set the following environment variables for the MCP server process, using sandbox credentials supplied by Investec:
+
+```text
+INVESTEC_API_ENVIRONMENT=sandbox
+INVESTEC_CLIENT_ID=<sandbox client ID>
+INVESTEC_CLIENT_SECRET=<sandbox client secret>
+INVESTEC_API_KEY=<sandbox API key>
+INVESTEC_SCOPES=accounts balances transactions
+```
+
+Keep credentials in a private environment or OS secret store. Do not put them in this repository or directly in shared MCP configuration. Sandbox data is mock data and stateless. Calls can be repeated, and balances do not change after sandbox transfers. The connector remains read-only and does not expose transfer, payment, or document tools.
+
+See [sandbox and production configuration](docs/configuration.md), [native desktop setup](docs/native-clients.md), [Docker stdio setup](docs/docker.md), and [security and operations](docs/security.md). Banking tool results may be sent by your MCP client to a hosted AI provider; review its data handling before connecting real accounts.
 
 ## Build and run
 
@@ -9,18 +25,19 @@ Install SDK 11.0.100 as pinned in [global.json](global.json). With the .NET Back
 Run these commands from the repository root.
 
 ```sh
-dotnet restore
+dotnet restore --locked-mode
 dotnet build -c Release
-dotnet test
+dotnet test -c Release
+dotnet publish src/InvestecMcp/InvestecMcp.csproj -c Release -o ./publish
 ```
 
-Configure your MCP client to launch the following command from the repository root after building.
+Configure your MCP client to launch the published DLL using an absolute path.
 
 ```sh
-dotnet src/InvestecMcp/bin/Release/net11.0/InvestecMcp.dll
+dotnet /ABSOLUTE/PATH/publish/InvestecMcp.dll
 ```
 
-For a project-local SDK, use `./.dotnet/dotnet` to launch the DLL. The server uses no HTTP listener. Standard output carries MCP messages and standard error carries logs. The xUnit project is ready for the protocol tests tracked in issue #02.
+For a project-local SDK, use its absolute `dotnet` path to launch the DLL. The server uses no HTTP listener. Standard output carries MCP messages and standard error carries logs. Native and Docker protocol tests use synthetic responses without Investec credentials.
 
 ## Dependency updates
 

@@ -61,7 +61,7 @@ public sealed class BankingTools(
     }
 
     [McpServerTool(Name = "get_account_transactions", ReadOnly = true, UseStructuredContent = true)]
-    [Description("Lists posted transactions for an authorized account and bounded date range.")]
+    [Description("Lists transactions for an authorized account and bounded date range.")]
     public async Task<object> GetAccountTransactionsAsync(
         string accountId,
         string fromDate,
@@ -81,7 +81,8 @@ public sealed class BankingTools(
         await authorization.EnsureAuthorizedAsync(accountId, cancellationToken);
         var response = await gateway.GetTransactionsAsync(accountId, from, to, cancellationToken);
         var source = response.Data?.Transactions ?? throw new InvalidDataException("INVALID_RESPONSE");
-        if (response.Meta?.TotalPages != 1 || source.Count > options.MaxTransactionItems ||
+        if (response.Meta?.TotalPages != 1 || response.Meta.CurrentPage is not null and not 1 ||
+            source.Count > options.MaxTransactionItems ||
             source.Any(transaction => !string.Equals(transaction.AccountId, accountId, StringComparison.Ordinal)))
         {
             throw new InvalidDataException("INCOMPLETE_OR_INVALID_RESPONSE");

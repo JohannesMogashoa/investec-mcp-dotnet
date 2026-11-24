@@ -222,19 +222,20 @@ Validate options at startup. For MCP `stdio`, avoid console logs to stdout. No `
 ```
 Ensure environment variables are supplied securely to the launched process; do not put literal secrets in shared examples. On Windows, config is typically `%APPDATA%\\Claude\\claude_desktop_config.json`; on macOS, `~/Library/Application Support/Claude/claude_desktop_config.json`. Verify local desktop app build/settings.
 
-### VS Code/Copilot `.vscode/mcp.json` sample
+### VS Code/Copilot user `mcp-config.json` sample
 ```json
 {
-  "servers": {
+  "mcpServers": {
     "investecPersonal": {
       "type": "stdio",
       "command": "dotnet",
-      "args": ["C:/ABSOLUTE/PATH/InvestecMcp.dll"]
+      "args": ["C:/ABSOLUTE/PATH/InvestecMcp.dll"],
+      "tools": ["get_accounts", "get_account_balance", "get_account_transactions"]
     }
   }
 }
 ```
-Prefer a **user-profile** MCP config for personal banking to avoid sharing a sensitive connector setting in a workspace repo. Ensure the `dotnet` executable is available to both hosts. For development, process startup can use project `dotnet run`, but published DLL is the repeatable target.
+Prefer the **Copilot user** config at `~/.copilot/mcp-config.json` (or `$COPILOT_HOME/mcp-config.json`) for personal banking to avoid sharing a sensitive connector setting in a workspace repo. Current Copilot sessions use the portable `mcpServers` format; the older `.vscode/mcp.json` `servers` format is editor-managed compatibility. Ensure the `dotnet` executable is available to both hosts. For development, process startup can use project `dotnet run`, but published DLL is the repeatable target.
 
 ### Docker
 - Multi-stage Dockerfile: .NET 11 SDK build, .NET 11 runtime final; pinned base image digest in release CI when feasible.

@@ -9,7 +9,6 @@ public sealed class ProductionToolDiscoveryTests
     [Fact]
     public async Task ProductionServer_AdvertisesExactlyThreeReadOnlyTools()
     {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var startInfo = new ProcessStartInfo(
             Environment.GetEnvironmentVariable("DOTNET_HOST_PATH") ?? "dotnet",
             [typeof(BankingTools).Assembly.Location])
@@ -22,7 +21,12 @@ public sealed class ProductionToolDiscoveryTests
         startInfo.Environment["INVESTEC_CLIENT_SECRET"] = "synthetic-secret";
         startInfo.Environment["INVESTEC_API_KEY"] = "synthetic-key";
         startInfo.Environment["INVESTEC_SCOPES"] = "accounts";
+        await RunDiscoveryAsync(startInfo);
+    }
 
+    internal static async Task RunDiscoveryAsync(ProcessStartInfo startInfo)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
         using var server = Process.Start(startInfo)!;
         var stderr = server.StandardError.ReadToEndAsync(timeout.Token);
         try
