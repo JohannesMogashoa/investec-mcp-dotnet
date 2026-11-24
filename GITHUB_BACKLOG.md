@@ -71,6 +71,8 @@
 - [ ] Record unresolved differences from Python upstream as issues.
 - [ ] No real tokens or financial data committed.
 
+**Remaining work:** Verify production read scopes and key permission labels, transaction date limits and pagination parameters, and upstream error details. Update the contract notes with sources and confirmed behavior.
+
 ### #04 — Configuration validation and safe local secret loading
 **Labels:** `type:security`, `area:hosting`, `priority:P0`, `size:M`  
 **Milestone:** M0  
@@ -196,6 +198,8 @@
 - [ ] Preserve distinct transaction date vs posting date.
 - [ ] Tool annotated read-only.
 
+**Remaining work:** Implement page retrieval after #03 confirms the paging contract. Until then, keep reporting incomplete results when additional pages exist.
+
 ### #13 — Strict tool allowlist and forbidden-write security tests
 **Labels:** `type:security`, `area:tools`, `priority:P0`, `size:M`  
 **Milestone:** M2  
@@ -221,6 +225,8 @@
 - [ ] Explicit `truncated`/continuation metadata or safe error provided.
 - [ ] No claim of full monthly history when data incomplete.
 - [ ] Limits tested at boundaries.
+
+**Remaining work:** Verify item and byte limits against paging behavior from #03 and #12, then test boundary cases across all pages.
 
 ### #15 — Test token lifecycle, retries, failures and cancellation
 **Labels:** `type:test`, `area:testing`, `priority:P0`, `size:L`  
@@ -279,7 +285,7 @@
 **Milestone:** M3  
 **Depends on:** 01,17
 
-**Description:** CI workflow to restore locked dependencies, format, build, test, scan secrets, and build Docker image (Docker smoke may depend on #22).
+**Description:** CI workflow to restore locked dependencies, format, build, test, scan secrets, build the Docker image, and run the Docker protocol smoke test after #23 is ready.
 
 **Acceptance criteria:**
 - [ ] PR/main runs without banking credentials.
@@ -300,6 +306,8 @@
 - [ ] A malformed config has documented recovery steps.
 - [ ] No secrets embedded in shared example.
 
+**Remaining work:** Complete the documented setup and manual acceptance using the synthetic backend, then sandbox if available.
+
 ### #21 — VS Code / Copilot local installation and acceptance
 **Labels:** `type:docs`, `area:hosting`, `priority:P0`, `size:M`  
 **Milestone:** M4  
@@ -312,6 +320,8 @@
 - [ ] User-profile installation avoids committing finance-related workspace config.
 - [ ] Restart and output diagnostics documented.
 - [ ] No real credentials in issue attachments.
+
+**Remaining work:** Complete the documented setup and manual acceptance using the synthetic backend, then sandbox if available.
 
 ### #22 — Docker multi-stage, non-root, stdio image
 **Labels:** `type:feature`, `area:docker`, `priority:P0`, `size:L`  
@@ -340,6 +350,8 @@
 - [ ] No network port published.
 - [ ] Docker stdout and stderr isolated.
 
+**Remaining work:** Run the MCP initialize, discovery, and tool-call smoke test through Docker. Verify no port publishing and separate stdout/stderr.
+
 ### #24 — Sandbox/live read-only manual verification
 **Labels:** `type:test`, `area:investec-api`, `priority:P0`, `size:M`  
 **Milestone:** M5  
@@ -353,6 +365,8 @@
 - [ ] Small date range transactions validated, including date meaning and pagination.
 - [ ] No real data persisted to repo, issues, or CI.
 - [ ] Record only non-sensitive pass/fail and divergences.
+
+**Remaining work:** Verify reads against the sandbox first. Then, if live access is explicitly opted into, use a restricted personal key and record only sanitized results.
 
 ### #25 — V1 documentation, troubleshooting, threat model
 **Labels:** `type:docs`, `area:docs`, `priority:P0`, `size:M`  
@@ -368,6 +382,8 @@
 - [ ] Supported environments, permission management and secret rotation documented.
 - [ ] Upgrade path to remote HTTP kept as future ADR, not implemented.
 
+**Remaining work:** Consolidate setup, troubleshooting, and threat-model documentation after #20–#23 acceptance results are available.
+
 ### #26 — V1 release gate and tagged build
 **Labels:** `type:chore`, `area:hosting`, `priority:P0`, `size:M`  
 **Milestone:** M5  
@@ -382,6 +398,8 @@
 - [ ] No payment permissions or tools.
 - [ ] Manual live smoke report contains no private banking data.
 - [ ] Release notes and known limitations published.
+
+**Remaining work:** Review and record every V1 release criterion. Create the `v0.1.0` tag only after the gate passes.
 
 ## Optional post-V1 issues (do not put in V1 release milestone)
 - Pending transaction endpoint, once verified.
