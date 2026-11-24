@@ -24,7 +24,13 @@ public sealed class BankingTools(
             displayName = account.ReferenceName ?? account.AccountName ?? account.ProductName,
             productName = account.ProductName
         }).ToArray();
-        return new { accounts = safeAccounts, count = safeAccounts.Length, retrievedAtUtc = timeProvider.GetUtcNow() };
+        var result = new { accounts = safeAccounts, count = safeAccounts.Length, retrievedAtUtc = timeProvider.GetUtcNow() };
+        if (JsonSerializer.SerializeToUtf8Bytes(result).Length > options.MaxResponseBytes)
+        {
+            throw new InvalidDataException("RESPONSE_TOO_LARGE");
+        }
+
+        return result;
     }
 
     [McpServerTool(Name = "get_account_balance", ReadOnly = true, UseStructuredContent = true)]
@@ -34,6 +40,10 @@ public sealed class BankingTools(
         await authorization.EnsureAuthorizedAsync(accountId, cancellationToken);
         var response = await gateway.GetBalanceAsync(accountId, cancellationToken);
         var balance = response.Data ?? throw new InvalidDataException("INVALID_RESPONSE");
+        if (!string.Equals(accountId, balance.AccountId, StringComparison.Ordinal))
+        {
+            throw new InvalidDataException("INVALID_RESPONSE");
+        }
         var result = new
         {
             accountId = balance.AccountId,
@@ -71,9 +81,17 @@ public sealed class BankingTools(
         await authorization.EnsureAuthorizedAsync(accountId, cancellationToken);
         var response = await gateway.GetTransactionsAsync(accountId, from, to, cancellationToken);
         var source = response.Data?.Transactions ?? throw new InvalidDataException("INVALID_RESPONSE");
-        if (response.Meta?.TotalPages > 1 || source.Count > options.MaxTransactionItems)
+        if (response.Meta?.TotalPages != 1 || source.Count > options.MaxTransactionItems ||
+            source.Any(transaction => !string.Equals(transaction.AccountId, accountId, StringComparison.Ordinal)))
         {
-            throw new InvalidDataException("RESPONSE_TOO_LARGE");
+            throw new InvalidDataException("INCOMPLETE_OR_INVALID_RESPONSE");
+        }
+
+        var balanceResponse = await gateway.GetBalanceAsync(accountId, cancellationToken);
+        var balance = balanceResponse.Data;
+        if (!string.Equals(balance?.AccountId, accountId, StringComparison.Ordinal))
+        {
+            throw new InvalidDataException("INVALID_RESPONSE");
         }
 
         var transactions = source.Select(transaction => new
@@ -92,6 +110,7 @@ public sealed class BankingTools(
             fromDate,
             toDate,
             transactions,
+            currency = balance!.Currency,
             count = transactions.Length,
             truncated = false,
             retrievedAtUtc = timeProvider.GetUtcNow()

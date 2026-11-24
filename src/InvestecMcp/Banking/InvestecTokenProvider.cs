@@ -13,6 +13,24 @@ public sealed class InvestecTokenProvider(HttpClient httpClient, InvestecOptions
 
     public async Task<string> GetTokenAsync(CancellationToken cancellationToken)
     {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(options.HttpTimeout);
+        try
+        {
+            return await GetTokenCoreAsync(timeout.Token);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new InvestecGatewayException("timeout");
+        }
+        catch (HttpRequestException)
+        {
+            throw new InvestecGatewayException("upstream_unavailable");
+        }
+    }
+
+    private async Task<string> GetTokenCoreAsync(CancellationToken cancellationToken)
+    {
         if (accessToken is { } token && timeProvider.GetUtcNow() < expiresAt)
         {
             return token;

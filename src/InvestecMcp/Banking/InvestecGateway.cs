@@ -28,26 +28,46 @@ public sealed class InvestecGateway(HttpClient httpClient, InvestecTokenProvider
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(options.HttpTimeout);
-        var token = await tokens.GetTokenAsync(timeout.Token);
+        try
+        {
+            return await GetCoreAsync(route, parse, timeout.Token);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new InvestecGatewayException("timeout");
+        }
+        catch (HttpRequestException)
+        {
+            throw new InvestecGatewayException("upstream_unavailable");
+        }
+    }
+
+    private async Task<T> GetCoreAsync<T>(string route, Func<ReadOnlySpan<byte>, T> parse, CancellationToken cancellationToken)
+    {
+        var token = await tokens.GetTokenAsync(cancellationToken);
 
         for (var attempt = 0; attempt < 3; attempt++)
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(options.ApiBaseUri, route));
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+            using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
             if (response.StatusCode == HttpStatusCode.Unauthorized && attempt == 0)
             {
                 tokens.Invalidate(token);
-                token = await tokens.GetTokenAsync(timeout.Token);
+                token = await tokens.GetTokenAsync(cancellationToken);
                 continue;
             }
 
             if ((response.StatusCode == HttpStatusCode.TooManyRequests || (int)response.StatusCode >= 500) && attempt < 2)
             {
-                var delay = response.Headers.RetryAfter?.Delta ?? TimeSpan.FromMilliseconds(200 * (attempt + 1));
-                await Task.Delay(delay > TimeSpan.FromSeconds(2) ? TimeSpan.FromSeconds(2) : delay, timeProvider, timeout.Token);
+                var delay = response.Headers.RetryAfter?.Delta ??
+                    (response.Headers.RetryAfter?.Date - timeProvider.GetUtcNow()) ??
+                    TimeSpan.FromMilliseconds(200 * (attempt + 1));
+                await Task.Delay(delay < TimeSpan.Zero ? TimeSpan.Zero :
+                    delay > TimeSpan.FromSeconds(2) ? TimeSpan.FromSeconds(2) : delay,
+                    timeProvider, cancellationToken);
                 continue;
             }
 
@@ -67,11 +87,11 @@ public sealed class InvestecGateway(HttpClient httpClient, InvestecTokenProvider
 
             try
             {
-                await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token);
+                await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
                 using var buffer = new MemoryStream();
                 var chunk = new byte[8192];
                 int read;
-                while ((read = await stream.ReadAsync(chunk, timeout.Token)) != 0)
+                while ((read = await stream.ReadAsync(chunk, cancellationToken)) != 0)
                 {
                     if (buffer.Length + read > options.MaxResponseBytes)
                     {
